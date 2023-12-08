@@ -34,10 +34,10 @@ async def on_ready():
 @bot.event
 async def on_member_join(member):
     guild_id = member.guild.id
-    if guild_id in welcome_channels:
-        channel = member.guild.get_channel(welcome_channels[guild_id])
-        if channel:
-            await channel.send(f"Welcome to the server, {member.mention}!")
+    channel_id = welcome_channels.get(guild_id)
+    channel = member.guild.get_channel(channel_id) if channel_id else discord.utils.get(member.guild.text_channels, name='welcome')
+    if channel:
+        await channel.send(f"Welcome to the server, {member.mention}!")
 
 # Check if user is admin/mod
 def is_admin_or_mod():
@@ -70,8 +70,10 @@ async def config(interaction: discord.Interaction, channel: discord.TextChannel)
         guild_id = interaction.guild_id
         welcome_channels[guild_id] = channel.id
         save_welcome_channels() 
+        print(f"Welcome channel set to {channel.id} for guild {guild_id}")
         await interaction.response.send_message(f"Welcome channel set to {channel.mention}")
     except Exception as e:
+        print(f"Error in welcomeconfig command: {e}")
         await interaction.response.send_message(f"Failed to set welcome channel: {e}")
 
 # Define a slash command for 'commands'
