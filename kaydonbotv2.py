@@ -27,7 +27,7 @@ async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
 
-# Send mwelcome message on user join
+# Send welcome message on user join
 @bot.event
 async def on_member_join(member):
     guild_id = member.guild.id
@@ -44,7 +44,7 @@ def is_admin_or_mod():
     return app_commands.check(predicate)
 
 #Define a slash command for 'welcomeconfig'
-@bot.tree.command(name="welcomeconfig", description="Configure the welcome channel")
+@bot.tree.command(name="welcomeconfig", description="Configure the welcome channel", guild=MY_GUILD)
 @is_admin_or_mod()
 async def config(interaction: discord.Interaction, channel: discord.TextChannel):
     guild_id = interaction.guild_id
