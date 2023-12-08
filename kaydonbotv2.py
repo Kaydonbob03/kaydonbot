@@ -27,7 +27,7 @@ async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
 
-
+# Send mwelcome message on user join
 @bot.event
 async def on_member_join(member):
     guild_id = member.guild.id
@@ -36,13 +36,15 @@ async def on_member_join(member):
         if channel:
             await channel.send(f"Welcome to the server, {member.mention}!")
 
+# Check if user is admin/mod
 def is_admin_or_mod():
     async def predicate(ctx):
         return ctx.author.guild_permissions.administrator or \
                any(role.name.lower() in ['admin', 'moderator'] for role in ctx.author.roles)
     return app_commands.check(predicate)
 
-@bot.tree.command(name="config", description="Configure the welcome channel")
+#Define a slash command for 'welcomeconfig'
+@bot.tree.command(name="welcomeconfig", description="Configure the welcome channel")
 @is_admin_or_mod()
 async def config(interaction: discord.Interaction, channel: discord.TextChannel):
     guild_id = interaction.guild_id
@@ -57,7 +59,7 @@ async def hello(interaction: discord.Interaction):
         /hello - Bot will say hello
         /chat prompt: str - This command will send whatever prompt you would like to ask the gpt api and it will return a response
         /image prompt: str - This command will take your prompt and use DALL-E 3 image generator to generate an image 
-        /config - This Command is for moderators and admins to configure the welcome message channel                          
+        /welcomeconfig - This Command is for moderators and admins to configure the welcome message channel                          
     """)
 
 # Define a slash command for 'hello'
