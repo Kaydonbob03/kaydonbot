@@ -67,14 +67,17 @@ async def load_welcome_channels():
 @is_admin_or_mod()
 async def config(interaction: discord.Interaction, channel: discord.TextChannel):
     try:
+        # Defer the response to give more time for processing
+        await interaction.response.defer()
+
         guild_id = interaction.guild_id
         welcome_channels[guild_id] = channel.id
         save_welcome_channels() 
-        print(f"Welcome channel set to {channel.id} for guild {guild_id}")
-        await interaction.response.send_message(f"Welcome channel set to {channel.mention}")
+
+        # Send the follow-up message after processing
+        await interaction.followup.send(f"Welcome channel set to {channel.mention}")
     except Exception as e:
-        print(f"Error in welcomeconfig command: {e}")
-        await interaction.response.send_message(f"Failed to set welcome channel: {e}")
+        await interaction.followup.send(f"Failed to set welcome channel: {e}")
 
 # Define a slash command for 'commands'
 @bot.tree.command(name="commands", description="Get a list off all commands", guild=MY_GUILD)
