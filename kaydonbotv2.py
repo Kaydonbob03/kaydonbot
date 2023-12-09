@@ -955,7 +955,7 @@ async def lock(interaction: discord.Interaction, channel: discord.TextChannel):
     except Exception as e:
         await interaction.followup.send(f"Failed to lock the channel: {e}")
 
-@bot.tree.command(name="unlock", description="Unlock a channel", guild=MY_GUILD)
+@bot.tree.command(name="unlock", description="Unlock a channel")
 @is_admin_or_mod()
 async def unlock(interaction: discord.Interaction, channel: discord.TextChannel):
     try:
