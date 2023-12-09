@@ -3,6 +3,9 @@ import discord
 import openai
 import json
 import requests
+import random
+import asyncio
+import dateparser
 from discord.ext import commands
 from discord import app_commands
 
@@ -308,6 +311,12 @@ def get_general_commands_embed():
     embed.add_field(name="/hello", value="Bot will say hello", inline=False)
     embed.add_field(name="/chat [prompt]", value="Sends a prompt to the GPT API and returns a response", inline=False)
     embed.add_field(name="/image [prompt]", value="Uses DALL-E 3 to generate an image based on your prompt", inline=False)
+    embed.add_field(name="/quote", value="Get an inspirational quote", inline=False)
+    embed.add_field(name="/joke", value="Tell a random joke", inline=False)
+    embed.add_field(name="/weather [location]", value="Get the current weather for a location", inline=False)
+    embed.add_field(name="/reminder [time] [reminder]", value="Set a reminder", inline=False)
+    embed.add_field(name="/poll [question] [options]", value="Create a poll", inline=False)
+    embed.add_field(name="/random [choices]", value="Make a random choice", inline=False)
     embed.set_footer(text="Page 1/2")
     return embed
 
@@ -409,6 +418,151 @@ async def image(interaction: discord.Interaction, prompt: str):
 async def hello(interaction: discord.Interaction):
     await interaction.response.send_message("Hello! How are you today?")
 
+@bot.tree.command(name="userinfo", description="Get information about a user", guild=MY_GUILD)
+async def userinfo(interaction: discord.Interaction, member: discord.Member):
+    try:
+        await interaction.response.defer()
+        embed = discord.Embed(title=f"User Info for {member}", color=discord.Color.blue())
+        embed.add_field(name="Username", value=str(member), inline=True)
+        embed.add_field(name="ID", value=member.id, inline=True)
+        embed.add_field(name="Joined at", value=member.joined_at.strftime("%Y-%m-%d %H:%M:%S"), inline=True)
+        embed.add_field(name="Roles", value=" ".join([role.mention for role in member.roles[1:]]), inline=False)
+        embed.add_field(name="Status", value=str(member.status).title(), inline=True)
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.followup.send(f"Failed to retrieve user info: {e}")
+
+    
+@bot.tree.command(name="serverinfo", description="Get information about the server", guild=MY_GUILD)
+async def serverinfo(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer()
+        guild = interaction.guild
+        embed = discord.Embed(title=f"Server Info for {guild.name}", color=discord.Color.green())
+        embed.set_thumbnail(url=guild.icon_url)
+        embed.add_field(name="Server ID", value=guild.id, inline=True)
+        embed.add_field(name="Owner", value=guild.owner.mention, inline=True)
+        embed.add_field(name="Members", value=guild.member_count, inline=True)
+        embed.add_field(name="Created at", value=guild.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=True)
+        embed.add_field(name="Roles", value=", ".join([role.name for role in guild.roles[1:]]), inline=False)
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.followup.send(f"Failed to retrieve server info: {e}")
+
+    
+@bot.tree.command(name="poll", description="Create a poll", guild=MY_GUILD)
+async def poll(interaction: discord.Interaction, question: str, *options: str):
+    try:
+        await interaction.response.defer()
+        if len(options) < 2:
+            await interaction.followup.send("Please provide at least two options for the poll.")
+            return
+
+        embed = discord.Embed(title="Poll", description=question, color=discord.Color.blue())
+        reactions = ['🔵', '🔴', '🟢', '🟡', '🟣', '🟠', '⚫', '⚪']  # Add more if needed
+
+        poll_options = {reactions[i]: option for i, option in enumerate(options) if i < len(reactions)}
+        for emoji, option in poll_options.items():
+            embed.add_field(name=emoji, value=option, inline=False)
+
+        poll_message = await interaction.followup.send(embed=embed)
+        for emoji in poll_options.keys():
+            await poll_message.add_reaction(emoji)
+    except Exception as e:
+        await interaction.followup.send(f"Failed to create poll: {e}")
+
+@bot.tree.command(name="random", description="Make a random choice", guild=MY_GUILD)
+async def random_choice(interaction: discord.Interaction, *choices: str):
+    try:
+        await interaction.response.defer()
+        if not choices:
+            await interaction.followup.send("Please provide some choices.")
+            return
+
+        selected_choice = random.choice(choices)
+        await interaction.followup.send(f"Randomly selected: {selected_choice}")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to make a random choice: {e}")
+
+
+@bot.tree.command(name="weather", description="Get the current weather for a location", guild=MY_GUILD)
+async def weather(interaction: discord.Interaction, location: str):
+    try:
+        await interaction.response.defer()
+        api_key = "52e9d4784cbc8ca2002aa20ab4af8aa8"
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric"
+        response = requests.get(url).json()
+
+        if response.get("cod") != 200:
+            await interaction.followup.send(f"Failed to retrieve weather info for {location}.")
+            return
+
+        weather_description = response['weather'][0]['description']
+        temperature = response['main']['temp']
+        humidity = response['main']['humidity']
+        wind_speed = response['wind']['speed']
+
+        weather_info = (f"Weather in {location.title()}: {weather_description}\n"
+                        f"Temperature: {temperature}°C\n"
+                        f"Humidity: {humidity}%\n"
+                        f"Wind Speed: {wind_speed} m/s")
+
+        await interaction.followup.send(weather_info)
+    except Exception as e:
+        await interaction.followup.send(f"Failed to retrieve weather info: {e}")
+    
+@bot.tree.command(name="reminder", description="Set a reminder", guild=MY_GUILD)
+async def reminder(interaction: discord.Interaction, time: str, reminder: str):
+    try:
+        await interaction.response.defer()
+        # Parse the time string into a datetime object
+        reminder_time = dateparser.parse(time)
+        if not reminder_time:
+            await interaction.followup.send("Invalid time format.")
+            return
+
+        # Calculate the delay in seconds
+        delay = (reminder_time - datetime.datetime.now()).total_seconds()
+        if delay < 0:
+            await interaction.followup.send("Time is in the past.")
+            return
+
+        # Wait for the specified time and send the reminder
+        await asyncio.sleep(delay)
+        await interaction.followup.send(f"Reminder: {reminder}")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to set reminder: {e}")
+
+
+@bot.tree.command(name="quote", description="Get an inspirational quote", guild=MY_GUILD)
+async def quote(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer()
+        response = requests.get("https://zenquotes.io/api/random")
+        if response.status_code != 200:
+            await interaction.followup.send("Failed to retrieve a quote.")
+            return
+
+        quote_data = response.json()[0]
+        quote_text = f"{quote_data['q']} - {quote_data['a']}"
+        await interaction.followup.send(quote_text)
+    except Exception as e:
+        await interaction.followup.send(f"Failed to retrieve a quote: {e}")
+    
+@bot.tree.command(name="joke", description="Tell a random joke", guild=MY_GUILD)
+async def joke(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer()
+        headers = {'Accept': 'application/json'}
+        response = requests.get("https://icanhazdadjoke.com/", headers=headers)
+        if response.status_code != 200:
+            await interaction.followup.send("Failed to retrieve a joke.")
+            return
+
+        joke_text = response.json()['joke']
+        await interaction.followup.send(joke_text)
+    except Exception as e:
+        await interaction.followup.send(f"Failed to retrieve a joke: {e}")
 
 
 
@@ -416,8 +570,7 @@ async def hello(interaction: discord.Interaction):
 
 
 
-
-# ------------------------------------------------OPENAI COMMANDS ENDS-----------------------------------------------------
+# ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------BOT TOKEN BELOW---------------------------------------------------------
 
