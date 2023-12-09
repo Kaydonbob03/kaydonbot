@@ -291,19 +291,18 @@ async def removerole(interaction: discord.Interaction, member: discord.Member, r
 # Define a slash command for 'commands'
 @bot.tree.command(name="commands", description="Get a list off all commands", guild=MY_GUILD)
 async def commands(interaction: discord.Interaction):
-    # Defer the initial response
     await interaction.response.defer()
-
-    # Send a follow-up message with the embed
     message = await interaction.followup.send(embed=get_general_commands_embed())
 
-    # Add reactions to the follow-up message
-    await message.add_reaction("⬅️")
-    await message.add_reaction("➡️")
+    # Add reactions for navigation
+    await message.add_reaction("⏪")  # Fast rewind to first page
+    await message.add_reaction("⬅️")  # Previous page
+    await message.add_reaction("➡️")  # Next page
+    await message.add_reaction("⏩")  # Fast forward to last page
 
 def get_general_commands_embed():
     embed = discord.Embed(
-        title="KaydonbotV2 General Commands",
+        title="Kaydonbot General Commands",
         description="Commands available for all users.",
         color=discord.Color.gold()
     )
@@ -317,12 +316,12 @@ def get_general_commands_embed():
     embed.add_field(name="/reminder [time] [reminder]", value="Set a reminder", inline=False)
     embed.add_field(name="/poll [question] [options]", value="Create a poll", inline=False)
     embed.add_field(name="/random [choices]", value="Make a random choice", inline=False)
-    embed.set_footer(text="Page 1/2")
+    embed.set_footer(text="Page 1/3")
     return embed
 
 def get_mod_commands_embed():
     embed = discord.Embed(
-        title="KaydonbotV2 Moderator Commands",
+        title="Kaydonbot Moderator Commands",
         description="Commands available for moderators and administrators.",
         color=discord.Color.green()
     )
@@ -338,15 +337,26 @@ def get_mod_commands_embed():
     embed.add_field(name="/announce [channel] [message]", value="Send an announcement", inline=False)
     embed.add_field(name="/addrole [member] [role]", value="Add a role to a member", inline=False)
     embed.add_field(name="/removerole [member] [role]", value="Remove a role from a member", inline=False)
-    embed.set_footer(text="Page 2/2")
+    embed.set_footer(text="Page 3/3")
+    return embed
+
+def get_bot_games_commands_embed():
+    embed = discord.Embed(
+        title="Kaydonbot Bot Games Commands",
+        description="Fun games you can play with the bot.",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="/battle", value="Start a battle game", inline=False)
+    embed.add_field(name="/blackjack", value="Play a game of blackjack", inline=False)
+    # Add more bot game commands here
+    embed.set_footer(text="Page 2/3")
     return embed
 
 
 @bot.event
 async def on_reaction_add(reaction, user):
-    # Check if the reaction is on the commands message and is from a non-bot user
     if user != bot.user and reaction.message.author == bot.user:
-        embeds = [get_general_commands_embed(), get_mod_commands_embed()]
+        embeds = [get_general_commands_embed(), get_bot_games_commands_embed(), get_mod_commands_embed()]
         current_page = int(reaction.message.embeds[0].footer.text.split('/')[0][-1]) - 1
 
         if reaction.emoji == "➡️":
@@ -355,6 +365,10 @@ async def on_reaction_add(reaction, user):
         elif reaction.emoji == "⬅️":
             next_page = (current_page - 1) % len(embeds)
             await reaction.message.edit(embed=embeds[next_page])
+        elif reaction.emoji == "⏩":
+            await reaction.message.edit(embed=embeds[-1])  # Go to last page
+        elif reaction.emoji == "⏪":
+            await reaction.message.edit(embed=embeds[0])  # Go to first page
 
         await reaction.remove(user)
 
@@ -564,13 +578,175 @@ async def joke(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve a joke: {e}")
 
-
-
-
-
-
-
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------BOT GAMES------------------------------------------------------------
+
+
+# _________________________________________________BLACKJACK_____________________________________________
+
+# Define card values
+card_values = {
+    '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+    '10': 10, 'J': 10, 'Q': 10, 'K': 10, 'A': 11
+}
+
+# Function to draw a card
+def draw_card():
+    card = random.choice(list(card_values.keys()))
+    suit = random.choice(['♠', '♦', '♣', '♥'])
+    return f"{card}{suit}"
+
+# Function to calculate the score of a hand
+def calculate_score(hand):
+    score = sum(card_values[card[:-1]] for card in hand)
+    # Adjust for Aces
+    for card in hand:
+        if card[:-1] == 'A' and score > 21:
+            score -= 10
+    return score
+
+# Function to check for Blackjack
+def is_blackjack(hand):
+    return calculate_score(hand) == 21 and len(hand) == 2
+
+# Function to update the game message
+async def update_game_message(message, player_hand, dealer_hand, game_over=False):
+    player_score = calculate_score(player_hand)
+    dealer_score = calculate_score(dealer_hand) if game_over else '?'
+    dealer_display = " ".join(dealer_hand) if game_over else dealer_hand[0] + " ?"
+
+    embed = discord.Embed(title="Blackjack", color=discord.Color.green())
+    embed.add_field(name="Your Hand", value=" ".join(player_hand) + f" (Score: {player_score})", inline=False)
+    embed.add_field(name="Dealer's Hand", value=dealer_display + f" (Score: {dealer_score})", inline=False)
+
+    if game_over:
+        if player_score > 21:
+            embed.set_footer(text="You busted! Dealer wins.")
+        elif dealer_score > 21 or player_score > dealer_score:
+            embed.set_footer(text="You win!")
+        elif player_score == dealer_score:
+            embed.set_footer(text="It's a tie!")
+        else:
+            embed.set_footer(text="Dealer wins.")
+
+    await message.edit(embed=embed)
+
+# Blackjack command
+@bot.tree.command(name="blackjack", description="Play a game of blackjack", guild=MY_GUILD)
+async def blackjack(interaction: discord.Interaction):
+    player_hand = [draw_card(), draw_card()]
+    dealer_hand = [draw_card(), draw_card()]
+
+    # Check for Blackjack on initial deal
+    if is_blackjack(player_hand) or is_blackjack(dealer_hand):
+        await interaction.response.send_message("Checking for Blackjack...")
+        await update_game_message(message, player_hand, dealer_hand, game_over=True)
+        return
+
+    message = await interaction.response.send_message("Starting Blackjack game...")
+    await update_game_message(message, player_hand, dealer_hand)
+
+    # Add reactions for player actions
+    await message.add_reaction('♠')  # Hit
+    await message.add_reaction('♦')  # Stand
+
+    def check(reaction, user):
+        return user == interaction.user and str(reaction.emoji) in ['♠', '♦'] and reaction.message.id == message.id
+
+    try:
+        reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=check)
+
+        if str(reaction.emoji) == '♠':  # Hit
+            player_hand.append(draw_card())
+            if calculate_score(player_hand) > 21:
+                await update_game_message(message, player_hand, dealer_hand, game_over=True)
+            else:
+                await update_game_message(message, player_hand, dealer_hand)
+        elif str(reaction.emoji) == '♦':  # Stand
+            while calculate_score(dealer_hand) < 17:
+                dealer_hand.append(draw_card())
+            await update_game_message(message, player_hand, dealer_hand, game_over=True)
+
+    except asyncio.TimeoutError:
+        await message.clear_reactions()
+        await message.edit(content="Blackjack game timed out.", embed=None)
+# _________________________________________________BLACKJACK ENDS_____________________________________________
+
+# _________________________________________________BATTLE GAME________________________________________________
+
+# Global dictionary to store game states
+game_states = {}
+
+# Define the battle command
+@bot.tree.command(name="battle", description="Start a battle game", guild=MY_GUILD)
+async def battle(interaction: discord.Interaction):
+    player_health = 100
+    bot_health = 100
+    embed = discord.Embed(title="Battle Game", description="Choose your action!", color=discord.Color.red())
+    embed.add_field(name="Your Health", value=str(player_health), inline=True)
+    embed.add_field(name="Bot's Health", value=str(bot_health), inline=True)
+    embed.add_field(name="Actions", value="⚔️ to attack\n🛡️ to defend", inline=False)
+
+    message = await interaction.response.send_message(embed=embed)
+
+    # Add reactions for game actions
+    await message.add_reaction('⚔️')  # Attack
+    await message.add_reaction('🛡️')  # Defend
+
+    # Store initial game state
+    game_states[message.id] = {
+        "player_health": player_health,
+        "bot_health": bot_health,
+        "interaction": interaction
+    }
+
+# Handle reactions
+@bot.event
+async def on_reaction_add(reaction, user):
+    if user != bot.user and reaction.message.id in game_states:
+        game_state = game_states[reaction.message.id]
+        interaction = game_state["interaction"]
+
+        if user.id != interaction.user.id:
+            return  # Ignore reactions from other users
+
+        player_action = reaction.emoji
+        bot_action = random.choice(['⚔️', '🛡️'])
+
+        # Determine the outcome of the turn
+        if player_action == '⚔️' and bot_action == '⚔️':
+            game_state["player_health"] -= 10
+            game_state["bot_health"] -= 10
+        elif player_action == '⚔️' and bot_action == '🛡️':
+            game_state["bot_health"] -= 5
+        elif player_action == '🛡️' and bot_action == '⚔️':
+            game_state["player_health"] -= 5
+
+        # Update the embed with the new health values
+        embed = discord.Embed(title="Battle Game", description="Choose your action!", color=discord.Color.red())
+        embed.add_field(name="Your Health", value=str(game_state["player_health"]), inline=True)
+        embed.add_field(name="Bot's Health", value=str(game_state["bot_health"]), inline=True)
+        embed.add_field(name="Bot's Action", value="Bot chose to " + ("attack" if bot_action == '⚔️' else "defend"), inline=False)
+
+        await reaction.message.edit(embed=embed)
+
+        # Check for end of game
+        if game_state["player_health"] <= 0 or game_state["bot_health"] <= 0:
+            winner = "You win!" if game_state["player_health"] > game_state["bot_health"] else "Bot wins!"
+            await reaction.message.edit(content=winner, embed=None)
+            del game_states[reaction.message.id]  # Clean up the game state
+            return
+
+        # Prepare for the next turn
+        await reaction.message.clear_reactions()
+        await reaction.message.add_reaction('⚔️')  # Attack
+        await reaction.message.add_reaction('🛡️')  # Defend
+# _________________________________________________BATTLE GAME ENDS________________________________________________
+
+
+
+# --------------------------------------------------BOT GAMES END----------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------BOT TOKEN BELOW---------------------------------------------------------
 
