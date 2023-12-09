@@ -196,22 +196,28 @@ async def dalle(interaction: discord.Interaction, prompt: str):
 @is_admin_or_mod()
 async def msgclear(interaction: discord.Interaction, channel: discord.TextChannel, number: int):
     try:
-        # Defer the response to give more time for processing
         await interaction.response.defer()
 
-        # Check if the number of messages to delete is within a reasonable range
         if number < 1 or number > 100:
             await interaction.followup.send("Please specify a number between 1 and 100.")
             return
 
-        # Fetch and delete the messages
         messages = await channel.history(limit=number).flatten()
-        await channel.delete_messages(messages)
+        if not messages:
+            await interaction.followup.send("No messages to delete.")
+            return
 
-        # Send a confirmation message
-        await interaction.followup.send(f"Cleared {len(messages)} messages in {channel.mention}.")
+        # Delete messages individually if they are older than 14 days
+        deleted_count = 0
+        for message in messages:
+            if (discord.utils.utcnow() - message.created_at).days < 14:
+                await message.delete()
+                deleted_count += 1
+
+        await interaction.followup.send(f"Cleared {deleted_count} messages in {channel.mention}.")
     except Exception as e:
         await interaction.followup.send(f"Failed to clear messages: {e}")
+
 
 
 
