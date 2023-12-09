@@ -6,6 +6,10 @@ import requests
 from discord.ext import commands
 from discord import app_commands
 
+# ========================================================================================================================
+
+# --------------------------------------------------INITIALIZATION------------------------------------------------------
+
 # Define your guild ID here (replace with your guild's ID)
 MY_GUILD = discord.Object(id=1178205977380671529)  
 
@@ -30,7 +34,9 @@ async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
 
-# -----------------------------------------------------------------------------------------------------
+# -------------------------------------------------INITIALIZATION ENDS--------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------MOD-ONLY COMMANDS----------------------------------------------------
 
 # Send welcome message on user join
 @bot.event
@@ -92,26 +98,192 @@ async def msgclear(interaction: discord.Interaction, channel: discord.TextChanne
             await interaction.followup.send("Please specify a number between 1 and 100.")
             return
 
-        # Fetch messages using an asynchronous approach
         messages = [message async for message in channel.history(limit=number)]
-
-        # Check if there are messages to delete
         if not messages:
             await interaction.followup.send("No messages to delete.")
             return
 
-        # Delete messages individually if they are older than 14 days
         deleted_count = 0
         for message in messages:
             if (discord.utils.utcnow() - message.created_at).days < 14:
                 await message.delete()
                 deleted_count += 1
 
-        await interaction.followup.send(f"Cleared {deleted_count} messages in {channel.mention}.")
+        confirmation_message = await interaction.followup.send(f"Cleared {deleted_count} messages in {channel.mention}.")
+        await asyncio.sleep(5)  # Wait for 5 seconds
+        await confirmation_message.delete()
     except Exception as e:
         await interaction.followup.send(f"Failed to clear messages: {e}")
 
-# -----------------------------------------------------------------------------------------------------
+
+@bot.tree.command(name="warn", description="Warn a member", guild=MY_GUILD)
+@is_admin_or_mod()
+async def warn(interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided"):
+    try:
+        await interaction.response.defer()
+        # Send a DM to the member with the warning
+        await member.send(f"You have been warned for: {reason}")
+        await interaction.followup.send(f"{member.mention} has been warned for: {reason}")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to warn member: {e}")
+
+@bot.tree.command(name="kick", description="Kick a member from the server", guild=MY_GUILD)
+@is_admin_or_mod()
+async def kick(interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided"):
+    try:
+        await interaction.response.defer()
+        await member.kick(reason=reason)
+        await interaction.followup.send(f"{member.mention} has been kicked for: {reason}")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to kick member: {e}")
+
+@bot.tree.command(name="ban", description="Ban a member from the server", guild=MY_GUILD)
+@is_admin_or_mod()
+async def ban(interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided"):
+    try:
+        await interaction.response.defer()
+        await member.ban(reason=reason)
+        await interaction.followup.send(f"{member.mention} has been banned for: {reason}")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to ban member: {e}")
+
+import asyncio
+
+@bot.tree.command(name="mute", description="Mute a member", guild=MY_GUILD)
+@is_admin_or_mod()
+async def mute(interaction: discord.Interaction, member: discord.Member, duration: int, reason: str = "No reason provided"):
+    try:
+        await interaction.response.defer()
+        muted_role = discord.utils.get(member.guild.roles, name="Muted")
+        if not muted_role:
+            await interaction.followup.send("Muted role not found.")
+            return
+
+        await member.add_roles(muted_role, reason=reason)
+        await interaction.followup.send(f"{member.mention} has been muted for {duration} minutes. Reason: {reason}")
+
+        await asyncio.sleep(duration * 60)  # Convert minutes to seconds
+        if muted_role in member.roles:
+            await member.remove_roles(muted_role, reason="Mute duration expired")
+            await interaction.followup.send(f"{member.mention} has been unmuted.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to mute member: {e}")
+
+@bot.tree.command(name="unmute", description="Unmute a member", guild=MY_GUILD)
+@is_admin_or_mod()
+async def unmute(interaction: discord.Interaction, member: discord.Member):
+    try:
+        await interaction.response.defer()
+        muted_role = discord.utils.get(member.guild.roles, name="Muted")
+        if not muted_role:
+            await interaction.followup.send("Muted role not found.")
+            return
+
+        if muted_role in member.roles:
+            await member.remove_roles(muted_role, reason="Manually unmuted")
+            await interaction.followup.send(f"{member.mention} has been unmuted.")
+        else:
+            await interaction.followup.send(f"{member.mention} is not muted.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to unmute member: {e}")
+
+
+@bot.tree.command(name="lock", description="Lock a channel", guild=MY_GUILD)
+@is_admin_or_mod()
+async def lock(interaction: discord.Interaction, channel: discord.TextChannel):
+    try:
+        await interaction.response.defer()
+        await channel.set_permissions(channel.guild.default_role, send_messages=False)
+        await interaction.followup.send(f"{channel.mention} has been locked.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to lock the channel: {e}")
+
+@bot.tree.command(name="unlock", description="Unlock a channel", guild=MY_GUILD)
+@is_admin_or_mod()
+async def unlock(interaction: discord.Interaction, channel: discord.TextChannel):
+    try:
+        await interaction.response.defer()
+        await channel.set_permissions(channel.guild.default_role, send_messages=True)
+        await interaction.followup.send(f"{channel.mention} has been unlocked.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to unlock the channel: {e}")
+
+
+@bot.tree.command(name="slowmode", description="Set slowmode in a channel", guild=MY_GUILD)
+@is_admin_or_mod()
+async def slowmode(interaction: discord.Interaction, channel: discord.TextChannel, seconds: int):
+    try:
+        await interaction.response.defer()
+        await channel.edit(slowmode_delay=seconds)
+        await interaction.followup.send(f"Slowmode set to {seconds} seconds in {channel.mention}.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to set slowmode: {e}")
+
+
+@bot.tree.command(name="purgeuser", description="Clear messages by a specific user", guild=MY_GUILD)
+@is_admin_or_mod()
+async def purgeuser(interaction: discord.Interaction, channel: discord.TextChannel, member: discord.Member, number: int):
+    try:
+        await interaction.response.defer()
+        deleted_count = 0
+        async for message in channel.history(limit=200):
+            if message.author == member and deleted_count < number:
+                await message.delete()
+                deleted_count += 1
+            if deleted_count >= number:
+                break
+        await interaction.followup.send(f"Cleared {deleted_count} messages from {member.mention} in {channel.mention}.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to clear messages: {e}")
+
+
+@bot.tree.command(name="announce", description="Send an announcement", guild=MY_GUILD)
+@is_admin_or_mod()
+async def announce(interaction: discord.Interaction, channel: discord.TextChannel, message: str):
+    try:
+        await interaction.response.defer()
+        await channel.send(message)
+        await interaction.followup.send(f"Announcement sent in {channel.mention}.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to send announcement: {e}")
+
+
+@bot.tree.command(name="addrole", description="Add a role to a member", guild=MY_GUILD)
+@is_admin_or_mod()
+async def addrole(interaction: discord.Interaction, member: discord.Member, role: discord.Role):
+    try:
+        await interaction.response.defer()
+        if role in member.roles:
+            await interaction.followup.send(f"{member.mention} already has the {role.name} role.")
+            return
+
+        await member.add_roles(role)
+        await interaction.followup.send(f"Added {role.name} role to {member.mention}.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to add role: {e}")
+
+
+@bot.tree.command(name="removerole", description="Remove a role from a member", guild=MY_GUILD)
+@is_admin_or_mod()
+async def removerole(interaction: discord.Interaction, member: discord.Member, role: discord.Role):
+    try:
+        await interaction.response.defer()
+        if role not in member.roles:
+            await interaction.followup.send(f"{member.mention} does not have the {role.name} role.")
+            return
+
+        await member.remove_roles(role)
+        await interaction.followup.send(f"Removed {role.name} role from {member.mention}.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to remove role: {e}")
+
+
+
+
+# -------------------------------------------------MOD-ONLY COMMANDS ENDS----------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------COMMANDS LIST------------------------------------------------------------
+
 
 # Define a slash command for 'commands'
 @bot.tree.command(name="commands", description="Get a list off all commands", guild=MY_GUILD)
@@ -145,10 +317,21 @@ def get_mod_commands_embed():
         description="Commands available for moderators and administrators.",
         color=discord.Color.green()
     )
+    # Add fields for each moderator command
     embed.add_field(name="/welcomeconfig", value="Configure the welcome message channel", inline=False)
     embed.add_field(name="/msgclear [channel] [number]", value="Clear a specified number of messages in a channel", inline=False)
+    embed.add_field(name="/mute [member] [duration] [reason]", value="Mute a member", inline=False)
+    embed.add_field(name="/unmute [member]", value="Unmute a member", inline=False)
+    embed.add_field(name="/lock [channel]", value="Lock a channel", inline=False)
+    embed.add_field(name="/unlock [channel]", value="Unlock a channel", inline=False)
+    embed.add_field(name="/slowmode [channel] [seconds]", value="Set slowmode in a channel", inline=False)
+    embed.add_field(name="/purgeuser [channel] [member] [number]", value="Clear messages by a specific user", inline=False)
+    embed.add_field(name="/announce [channel] [message]", value="Send an announcement", inline=False)
+    embed.add_field(name="/addrole [member] [role]", value="Add a role to a member", inline=False)
+    embed.add_field(name="/removerole [member] [role]", value="Remove a role from a member", inline=False)
     embed.set_footer(text="Page 2/2")
     return embed
+
 
 @bot.event
 async def on_reaction_add(reaction, user):
@@ -166,19 +349,14 @@ async def on_reaction_add(reaction, user):
 
         await reaction.remove(user)
 
-
-# -----------------------------------------------------------------------------------------------------
-
-
-# Define a slash command for 'hello'
-@bot.tree.command(name="hello", description="This is just a simple hello command.", guild=MY_GUILD)  
-async def hello(interaction: discord.Interaction):
-    await interaction.response.send_message("Hello! How are you today?")
+# --------------------------------------------------COMMANDS LIST ENDS-------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------OPENAI COMMANDS---------------------------------------------------------
 
 
 # Define a slash command for 'chat'
 @bot.tree.command(name="chat", description="Get a response from GPT", guild=MY_GUILD)
-async def gpt(interaction: discord.Interaction, prompt: str):
+async def chat(interaction: discord.Interaction, prompt: str):
     # Prepare the chat messages for the API call
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -212,7 +390,7 @@ async def generate_dalle_image(prompt: str):
 
 # Define a slash command for 'image'
 @bot.tree.command(name="image", description="Generate an image using DALL-E 3", guild=MY_GUILD)
-async def dalle(interaction: discord.Interaction, prompt: str):
+async def image(interaction: discord.Interaction, prompt: str):
     # Defer the response to give more time for processing
     await interaction.response.defer()
 
@@ -222,13 +400,43 @@ async def dalle(interaction: discord.Interaction, prompt: str):
     else:
         await interaction.followup.send("Sorry, I couldn't generate an image.")
 
+# ------------------------------------------------OPENAI COMMANDS ENDS-----------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------GENERAL COMMANDS--------------------------------------------------------
+
+# Define a slash command for 'hello'
+@bot.tree.command(name="hello", description="This is just a simple hello command.", guild=MY_GUILD)  
+async def hello(interaction: discord.Interaction):
+    await interaction.response.send_message("Hello! How are you today?")
+
+
+
+
+
+
+
+
+
+# ------------------------------------------------OPENAI COMMANDS ENDS-----------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------BOT TOKEN BELOW---------------------------------------------------------
 
 
 
 # Run the bot with your token
-bot.run('MTE4MTE0Mzg1NDk1OTgzNzE4NA.GvyQxQ.7AXQUI2YtMC8lKPbXsJigwSQqV-penF1ACUXzY')  
+bot.run('MTE4MTE0Mzg1NDk1OTgzNzE4NA.GvyQxQ.7AXQUI2YtMC8lKPbXsJigwSQqV-penF1ACUXzY') 
 
-# -------------------------------------------------------NO GUILD ID BLOCK-------------------------------------------------------------
+# --------------------------------------------------BOT TOKEN ENDS--------------------------------------------------------
+
+# ========================================================================================================================
+
+
+
+
+# =======================================================================================================================================
+# =========================================================={NO GUILD ID BLOCK}==========================================================
+# =======================================================================================================================================
+
 
 # # Set your OpenAI API key (ensure this is set in your environment variables)
 # openai.api_key = os.getenv('OPENAI_API_KEY')
