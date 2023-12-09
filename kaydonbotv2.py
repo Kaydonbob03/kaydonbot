@@ -30,6 +30,8 @@ async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
 
+# -----------------------------------------------------------------------------------------------------
+
 # Send welcome message on user join
 @bot.event
 async def on_member_join(member):
@@ -78,23 +80,58 @@ async def config(interaction: discord.Interaction, channel: discord.TextChannel)
         await interaction.followup.send(f"Welcome channel set to {channel.mention}")
     except Exception as e:
         await interaction.followup.send(f"Failed to set welcome channel: {e}")
+        
+# -----------------------------------------------------------------------------------------------------
 
 # Define a slash command for 'commands'
 @bot.tree.command(name="commands", description="Get a list off all commands", guild=MY_GUILD)
 async def commands(interaction: discord.Interaction):
+    message = await interaction.response.send_message(embed=get_general_commands_embed())
+    await message.add_reaction("⬅️")
+    await message.add_reaction("➡️")
+
+def get_general_commands_embed():
     embed = discord.Embed(
-        title="KaydonbotV2 Commands",
-        description="My Prefix when not using application commands (slash commands) is ';'.",
-        color=discord.Color.yellow()
+        title="KaydonbotV2 General Commands",
+        description="Commands available for all users.",
+        color=discord.Color.blue()
     )
     embed.add_field(name="/commands", value="Displays list of all commands", inline=False)
     embed.add_field(name="/hello", value="Bot will say hello", inline=False)
     embed.add_field(name="/chat [prompt]", value="Sends a prompt to the GPT API and returns a response", inline=False)
     embed.add_field(name="/image [prompt]", value="Uses DALL-E 3 to generate an image based on your prompt", inline=False)
-    embed.add_field(name="/welcomeconfig", value="For moderators and admins to configure the welcome message channel", inline=False)
-    embed.set_footer(text="KaydonbotV2 - Copyright (c) @Kaydonbob03")
+    embed.set_footer(text="Page 1/2")
+    return embed
 
-    await interaction.response.send_message(embed=embed)
+def get_mod_commands_embed():
+    embed = discord.Embed(
+        title="KaydonbotV2 Moderator Commands",
+        description="Commands available for moderators and administrators.",
+        color=discord.Color.gold()
+    )
+    embed.add_field(name="/welcomeconfig", value="Configure the welcome message channel", inline=False)
+    embed.add_field(name="/msgclear [channel] [number]", value="Clear a specified number of messages in a channel", inline=False)
+    embed.set_footer(text="Page 2/2")
+    return embed
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    # Check if the reaction is on the commands message and is from a non-bot user
+    if user != bot.user and reaction.message.author == bot.user:
+        embeds = [get_general_commands_embed(), get_mod_commands_embed()]
+        current_page = int(reaction.message.embeds[0].footer.text.split('/')[0][-1]) - 1
+
+        if reaction.emoji == "➡️":
+            next_page = (current_page + 1) % len(embeds)
+            await reaction.message.edit(embed=embeds[next_page])
+        elif reaction.emoji == "⬅️":
+            next_page = (current_page - 1) % len(embeds)
+            await reaction.message.edit(embed=embeds[next_page])
+
+        await reaction.remove(user)
+
+
+# -----------------------------------------------------------------------------------------------------
 
 
 # Define a slash command for 'hello'
@@ -148,6 +185,27 @@ async def dalle(interaction: discord.Interaction, prompt: str):
         await interaction.followup.send(image_url)
     else:
         await interaction.followup.send("Sorry, I couldn't generate an image.")
+
+@bot.tree.command(name="msgclear", description="Clear a specified number of messages in a channel", guild=MY_GUILD)
+@is_admin_or_mod()
+async def msgclear(interaction: discord.Interaction, channel: discord.TextChannel, number: int):
+    try:
+        # Defer the response to give more time for processing
+        await interaction.response.defer()
+
+        # Check if the number of messages to delete is within a reasonable range
+        if number < 1 or number > 100:
+            await interaction.followup.send("Please specify a number between 1 and 100.")
+            return
+
+        # Fetch and delete the messages
+        messages = await channel.history(limit=number).flatten()
+        await channel.delete_messages(messages)
+
+        # Send a confirmation message
+        await interaction.followup.send(f"Cleared {len(messages)} messages in {channel.mention}.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to clear messages: {e}")
 
 
 
