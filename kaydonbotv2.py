@@ -64,7 +64,7 @@ async def load_welcome_channels():
                 fallback_channels[guild.id] = welcome_channel.id
         return fallback_channels
         
-#Define a slash command for 'welcomeconfig'
+# Define a slash command for 'welcomeconfig'
 @bot.tree.command(name="welcomeconfig", description="Configure the welcome channel", guild=MY_GUILD)
 @is_admin_or_mod()
 async def welcomeconfig(interaction: discord.Interaction, channel: discord.TextChannel):
@@ -81,7 +81,7 @@ async def welcomeconfig(interaction: discord.Interaction, channel: discord.TextC
     except Exception as e:
         await interaction.followup.send(f"Failed to set welcome channel: {e}")
 
-# 
+# Define a slash command for 'msgclear'
 @bot.tree.command(name="msgclear", description="Clear a specified number of messages in a channel", guild=MY_GUILD)
 @is_admin_or_mod()
 async def msgclear(interaction: discord.Interaction, channel: discord.TextChannel, number: int):
@@ -92,7 +92,10 @@ async def msgclear(interaction: discord.Interaction, channel: discord.TextChanne
             await interaction.followup.send("Please specify a number between 1 and 100.")
             return
 
-        messages = await channel.history(limit=number).flatten()
+        # Fetch messages using an asynchronous approach
+        messages = [message async for message in channel.history(limit=number)]
+
+        # Check if there are messages to delete
         if not messages:
             await interaction.followup.send("No messages to delete.")
             return
@@ -107,7 +110,7 @@ async def msgclear(interaction: discord.Interaction, channel: discord.TextChanne
         await interaction.followup.send(f"Cleared {deleted_count} messages in {channel.mention}.")
     except Exception as e:
         await interaction.followup.send(f"Failed to clear messages: {e}")
-        
+
 # -----------------------------------------------------------------------------------------------------
 
 # Define a slash command for 'commands'
