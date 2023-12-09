@@ -86,7 +86,13 @@ async def config(interaction: discord.Interaction, channel: discord.TextChannel)
 # Define a slash command for 'commands'
 @bot.tree.command(name="commands", description="Get a list off all commands", guild=MY_GUILD)
 async def commands(interaction: discord.Interaction):
-    message = await interaction.response.send_message(embed=get_general_commands_embed())
+    # Defer the initial response
+    await interaction.response.defer()
+
+    # Send a follow-up message with the embed
+    message = await interaction.followup.send(embed=get_general_commands_embed())
+
+    # Add reactions to the follow-up message
     await message.add_reaction("⬅️")
     await message.add_reaction("➡️")
 
@@ -94,7 +100,7 @@ def get_general_commands_embed():
     embed = discord.Embed(
         title="KaydonbotV2 General Commands",
         description="Commands available for all users.",
-        color=discord.Color.blue()
+        color=discord.Color.gold()
     )
     embed.add_field(name="/commands", value="Displays list of all commands", inline=False)
     embed.add_field(name="/hello", value="Bot will say hello", inline=False)
@@ -107,7 +113,7 @@ def get_mod_commands_embed():
     embed = discord.Embed(
         title="KaydonbotV2 Moderator Commands",
         description="Commands available for moderators and administrators.",
-        color=discord.Color.gold()
+        color=discord.Color.green()
     )
     embed.add_field(name="/welcomeconfig", value="Configure the welcome message channel", inline=False)
     embed.add_field(name="/msgclear [channel] [number]", value="Clear a specified number of messages in a channel", inline=False)
