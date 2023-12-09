@@ -488,14 +488,15 @@ async def poll(interaction: discord.Interaction, question: str, options_str: str
 
 
 @bot.tree.command(name="random", description="Make a random choice", guild=MY_GUILD)
-async def random_choice(interaction: discord.Interaction, *choices: str):
+async def random_choice(interaction: discord.Interaction, choices_str: str):
     try:
         await interaction.response.defer()
-        if not choices:
-            await interaction.followup.send("Please provide some choices.")
+        choices = choices_str.split(",")  # Split the choices string by commas
+        if len(choices) < 2:
+            await interaction.followup.send("Please provide at least two choices, separated by commas.")
             return
 
-        selected_choice = random.choice(choices)
+        selected_choice = random.choice(choices).strip()  # Randomly select a choice and strip whitespace
         await interaction.followup.send(f"Randomly selected: {selected_choice}")
     except Exception as e:
         await interaction.followup.send(f"Failed to make a random choice: {e}")
