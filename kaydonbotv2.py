@@ -465,17 +465,18 @@ async def serverinfo(interaction: discord.Interaction):
 
     
 @bot.tree.command(name="poll", description="Create a poll", guild=MY_GUILD)
-async def poll(interaction: discord.Interaction, question: str, *options: str):
+async def poll(interaction: discord.Interaction, question: str, options_str: str):
     try:
         await interaction.response.defer()
+        options = options_str.split(",")  # Split the options string by commas
         if len(options) < 2:
-            await interaction.followup.send("Please provide at least two options for the poll.")
+            await interaction.followup.send("Please provide at least two options for the poll, separated by commas.")
             return
 
         embed = discord.Embed(title="Poll", description=question, color=discord.Color.blue())
         reactions = ['🔵', '🔴', '🟢', '🟡', '🟣', '🟠', '⚫', '⚪']  # Add more if needed
 
-        poll_options = {reactions[i]: option for i, option in enumerate(options) if i < len(reactions)}
+        poll_options = {reactions[i]: option.strip() for i, option in enumerate(options) if i < len(reactions)}
         for emoji, option in poll_options.items():
             embed.add_field(name=emoji, value=option, inline=False)
 
@@ -484,6 +485,7 @@ async def poll(interaction: discord.Interaction, question: str, *options: str):
             await poll_message.add_reaction(emoji)
     except Exception as e:
         await interaction.followup.send(f"Failed to create poll: {e}")
+
 
 @bot.tree.command(name="random", description="Make a random choice", guild=MY_GUILD)
 async def random_choice(interaction: discord.Interaction, *choices: str):
