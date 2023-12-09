@@ -706,7 +706,7 @@ async def battle(interaction: discord.Interaction):
 
 # Handle reactions
 @bot.event
-async def on_reaction_add(reaction, user):
+async def on_reaction_add_battle(reaction, user):
     if user != bot.user and reaction.message.id in game_states:
         game_state = game_states[reaction.message.id]
         interaction = game_state["interaction"]
