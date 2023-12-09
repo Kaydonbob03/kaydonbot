@@ -43,9 +43,9 @@ async def on_member_join(member):
 
 # Check if user is admin/mod
 def is_admin_or_mod():
-    async def predicate(ctx):
-        return ctx.author.guild_permissions.administrator or \
-               any(role.name.lower() in ['admin', 'moderator'] for role in ctx.author.roles)
+    async def predicate(interaction: discord.Interaction):
+        return interaction.user.guild_permissions.administrator or \
+               any(role.name.lower() in ['admin', 'moderator'] for role in interaction.user.roles)
     return app_commands.check(predicate)
     
 def save_welcome_channels():
@@ -67,7 +67,7 @@ async def load_welcome_channels():
 #Define a slash command for 'welcomeconfig'
 @bot.tree.command(name="welcomeconfig", description="Configure the welcome channel", guild=MY_GUILD)
 @is_admin_or_mod()
-async def config(interaction: discord.Interaction, channel: discord.TextChannel):
+async def welcomeconfig(interaction: discord.Interaction, channel: discord.TextChannel):
     try:
         # Defer the response to give more time for processing
         await interaction.response.defer()
@@ -80,6 +80,33 @@ async def config(interaction: discord.Interaction, channel: discord.TextChannel)
         await interaction.followup.send(f"Welcome channel set to {channel.mention}")
     except Exception as e:
         await interaction.followup.send(f"Failed to set welcome channel: {e}")
+
+# 
+@bot.tree.command(name="msgclear", description="Clear a specified number of messages in a channel", guild=MY_GUILD)
+@is_admin_or_mod()
+async def msgclear(interaction: discord.Interaction, channel: discord.TextChannel, number: int):
+    try:
+        await interaction.response.defer()
+
+        if number < 1 or number > 100:
+            await interaction.followup.send("Please specify a number between 1 and 100.")
+            return
+
+        messages = await channel.history(limit=number).flatten()
+        if not messages:
+            await interaction.followup.send("No messages to delete.")
+            return
+
+        # Delete messages individually if they are older than 14 days
+        deleted_count = 0
+        for message in messages:
+            if (discord.utils.utcnow() - message.created_at).days < 14:
+                await message.delete()
+                deleted_count += 1
+
+        await interaction.followup.send(f"Cleared {deleted_count} messages in {channel.mention}.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to clear messages: {e}")
         
 # -----------------------------------------------------------------------------------------------------
 
@@ -191,32 +218,6 @@ async def dalle(interaction: discord.Interaction, prompt: str):
         await interaction.followup.send(image_url)
     else:
         await interaction.followup.send("Sorry, I couldn't generate an image.")
-
-@bot.tree.command(name="msgclear", description="Clear a specified number of messages in a channel", guild=MY_GUILD)
-@is_admin_or_mod()
-async def msgclear(interaction: discord.Interaction, channel: discord.TextChannel, number: int):
-    try:
-        await interaction.response.defer()
-
-        if number < 1 or number > 100:
-            await interaction.followup.send("Please specify a number between 1 and 100.")
-            return
-
-        messages = await channel.history(limit=number).flatten()
-        if not messages:
-            await interaction.followup.send("No messages to delete.")
-            return
-
-        # Delete messages individually if they are older than 14 days
-        deleted_count = 0
-        for message in messages:
-            if (discord.utils.utcnow() - message.created_at).days < 14:
-                await message.delete()
-                deleted_count += 1
-
-        await interaction.followup.send(f"Cleared {deleted_count} messages in {channel.mention}.")
-    except Exception as e:
-        await interaction.followup.send(f"Failed to clear messages: {e}")
 
 
 
