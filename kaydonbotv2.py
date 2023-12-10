@@ -828,6 +828,7 @@ def load_wyr_questions():
 # Define the Would You Rather command
 @bot.tree.command(name="wouldyourather", description="Play 'Would You Rather'")
 async def wouldyourather(interaction: discord.Interaction):
+    await interaction.response.defer()
     questions = load_wyr_questions()
     question = random.choice(questions)
 
@@ -835,7 +836,7 @@ async def wouldyourather(interaction: discord.Interaction):
     embed.add_field(name="Option 1", value=question["option1"], inline=False)
     embed.add_field(name="Option 2", value=question["option2"], inline=False)
 
-    message = await interaction.response.send_message(embed=embed)
+    message = await interaction.followup.send(embed=embed)  # Use followup.send
 
     # Add reactions for options
     await message.add_reaction("1️⃣")  # Option 1
@@ -856,6 +857,11 @@ async def wouldyourather(interaction: discord.Interaction):
 # _________________________________________________WOULD YOU RATHER ENDS____________________________________________
 
 # ______________________________________________________TRUTH OR DARE_______________________________________________
+
+# Load Truth or Dare questions from JSON file
+def load_tod_questions():
+    with open('truthordare.json', 'r') as file:
+        return json.load(file)
 
 # Define the Truth or Dare command
 @bot.tree.command(name="truthordare", description="Play 'Truth or Dare'")
