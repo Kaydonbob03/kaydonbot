@@ -797,6 +797,27 @@ async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
 
+
+@bot.event
+async def on_guild_join(guild):
+    # Create an embed message
+    embed = discord.Embed(
+        title="Hello! I'm Kaydonbot",
+        description="Thanks for inviting me to your server!",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="Prefix", value="';' for non-slash commands", inline=False)
+    embed.add_field(name="Commands", value="Use `/commands` to see all my commands", inline=False)
+    embed.set_footer(text="Kaydonbot - Here to assist you")
+
+    # Find a channel to send the welcome message
+    for channel in guild.text_channels:
+        if channel.permissions_for(guild.me).send_messages:
+            await channel.send(embed=embed)
+            break
+
+
+
 # -------------------------------------------------INITIALIZATION ENDS--------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------MOD-ONLY COMMANDS----------------------------------------------------
@@ -1058,7 +1079,7 @@ async def commands(interaction: discord.Interaction):
 def get_general_commands_embed():
     embed = discord.Embed(
         title="Kaydonbot General Commands",
-        description="Commands available for all users.",
+        description="Commands available for all users. Default prefix is ';'",
         color=discord.Color.gold()
     )
     embed.add_field(name="/commands", value="Displays list of all commands", inline=False)
