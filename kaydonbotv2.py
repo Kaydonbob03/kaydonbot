@@ -857,14 +857,9 @@ async def wouldyourather(interaction: discord.Interaction):
 
 # ______________________________________________________TRUTH OR DARE_______________________________________________
 
-# Load Truth or Dare questions from JSON file
-def load_tod_questions():
-    with open('truthordare.json', 'r') as file:
-        return json.load(file)
-
 # Define the Truth or Dare command
-@bot.tree.command(name="truthorDare", description="Play 'Truth or Dare'")
-async def truthorDare(interaction: discord.Interaction):
+@bot.tree.command(name="truthordare", description="Play 'Truth or Dare'")
+async def truth_or_dare(interaction: discord.Interaction):
     questions = load_tod_questions()
 
     embed = discord.Embed(title="Truth or Dare", description="React with 🤔 for Truth or 😈 for Dare", color=discord.Color.blue())
