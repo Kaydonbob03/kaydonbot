@@ -848,8 +848,8 @@ async def wouldyourather(interaction: discord.Interaction):
 
     try:
         reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=wyr_check)
-        choice = "Option 1" if str(reaction.emoji) == "1️⃣" else "Option 2"
-        await interaction.followup.send(f"{user.mention} chose {choice}: {question[choice.lower()]}")
+        choice_key = "option1" if str(reaction.emoji) == "1️⃣" else "option2"
+        await interaction.followup.send(f"{user.mention} chose {choice_key.replace('option', 'Option ')}: {question[choice_key]}")
     except asyncio.TimeoutError:
         await message.clear_reactions()
         await message.edit(content="Would You Rather game timed out.", embed=None)
@@ -866,14 +866,15 @@ def load_tod_questions():
 # Define the Truth or Dare command
 @bot.tree.command(name="truthordare", description="Play 'Truth or Dare'")
 async def truth_or_dare(interaction: discord.Interaction):
+    await interaction.response.defer()
     questions = load_tod_questions()
 
     embed = discord.Embed(title="Truth or Dare", description="React with 🤔 for Truth or 😈 for Dare", color=discord.Color.blue())
-    message = await interaction.response.send_message(embed=embed)
+    message = await interaction.followup.send(embed=embed)
 
-    # Add reactions for Truth or Dare
-    await message.add_reaction("🤔")  # Truth
-    await message.add_reaction("😈")  # Dare
+    if message:
+        await message.add_reaction("🤔")  # Truth
+        await message.add_reaction("😈")  # Dare
 
     # Wait for a reaction
     def tod_check(reaction, user):
