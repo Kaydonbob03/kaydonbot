@@ -1,0 +1,133 @@
+[
+
+    {
+        "question": "Would you rather have more time or more money?",
+        "option1": "More time",
+        "option2": "More money"
+    },
+    {
+        "question": "Would you rather have a rewind button or a pause button on your life?",
+        "option1": "Rewind button",
+        "option2": "Pause button"
+    },
+    {
+        "question": "Would you rather be able to talk with animals or speak all foreign languages?",
+        "option1": "Talk with animals",
+        "option2": "Speak all foreign languages"
+    },
+    {
+        "question": "Would you rather read minds or accurately predict the future?",
+        "option1": "Read minds",
+        "option2": "Predict the future"
+    },
+    {
+        "question": "Would you rather never have to work again or never have to sleep again?",
+        "option1": "Never work again",
+        "option2": "Never sleep again"
+    },
+    {
+        "question": "Would you rather explore space or the deep sea?",
+        "option1": "Explore space",
+        "option2": "Explore the deep sea"
+    },
+    {
+        "question": "Would you rather live without internet or live without AC and heating?",
+        "option1": "Live without internet",
+        "option2": "Live without AC and heating"
+    },
+    {
+        "question": "Would you rather be invisible for a day or be able to fly for a day?",
+        "option1": "Be invisible",
+        "option2": "Be able to fly"
+    },
+    {
+        "question": "Would you rather be able to control fire or water?",
+        "option1": "Control fire",
+        "option2": "Control water"
+    },
+    {
+        "question": "Would you rather have unlimited sushi for life or unlimited tacos for life?",
+        "option1": "Unlimited sushi",
+        "option2": "Unlimited tacos"
+    },
+    {
+        "question": "Would you rather be a master of every musical instrument or be fluent in every language?",
+        "option1": "Master of instruments",
+        "option2": "Fluent in every language"
+    },
+    {
+        "question": "Would you rather live in a utopia as a normal person or in a dystopia but you are the supreme ruler?",
+        "option1": "Utopia as normal",
+        "option2": "Dystopia as ruler"
+    },
+    {
+        "question": "Would you rather have a personal chef or a personal maid?",
+        "option1": "Personal chef",
+        "option2": "Personal maid"
+    },
+    {
+        "question": "Would you rather be able to breathe underwater or have the agility of a cat?",
+        "option1": "Breathe underwater",
+        "option2": "Agility of a cat"
+    },
+    {
+        "question": "Would you rather always be 10 minutes late or always be 20 minutes early?",
+        "option1": "10 minutes late",
+        "option2": "20 minutes early"
+    },
+    {
+        "question": "Would you rather have telekinesis (the ability to move things with your mind) or telepathy (the ability to read minds)?",
+        "option1": "Telekinesis",
+        "option2": "Telepathy"
+    },
+    {
+        "question": "Would you rather be able to teleport anywhere or be able to read minds?",
+        "option1": "Teleport anywhere",
+        "option2": "Read minds"
+    },
+    {
+        "question": "Would you rather never use social media sites/apps again or never watch another movie or TV show?",
+        "option1": "Never use social media",
+        "option2": "Never watch movies/TV"
+    },
+    {
+        "question": "Would you rather have a golden voice or a silver tongue?",
+        "option1": "Golden voice",
+        "option2": "Silver tongue"
+    },
+    {
+        "question": "Would you rather be covered in fur or covered in scales?",
+        "option1": "Covered in fur",
+        "option2": "Covered in scales"
+    },
+    {
+        "question": "Would you rather be in jail for a year or lose a year off your life?",
+        "option1": "In jail for a year",
+        "option2": "Lose a year off life"
+    },
+    {
+        "question": "Would you rather always be slightly late or super early?",
+        "option1": "Slightly late",
+        "option2": "Super early"
+    },
+    {
+        "question": "Would you rather give up all drinks except for water or give up eating anything that was cooked in an oven?",
+        "option1": "Give up all drinks except water",
+        "option2": "Give up oven-cooked foods"
+    },
+    {
+        "question": "Would you rather have an easy job working for someone else or work for yourself but work incredibly hard?",
+        "option1": "Easy job for someone else",
+        "option2": "Work hard for myself"
+    },
+    {
+        "question": "Would you rather be the first person to explore a planet or be the inventor of a drug that cures a deadly disease?",
+        "option1": "Explore a planet",
+        "option2": "Invent a cure"
+    },
+    {
+        "question": "Would you rather go back to age 5 with everything you know now or know now everything your future self will learn?",
+        "option1": "Back to age 5 with current knowledge",
+        "option2": "Know future self's knowledge"
+    }
+]
