@@ -826,7 +826,7 @@ def load_wyr_questions():
         return json.load(file)
 
 # Define the Would You Rather command
-@bot.tree.command(name="wouldyourather", description="Play 'Would You Rather'", guild=MY_GUILD)
+@bot.tree.command(name="wouldyourather", description="Play 'Would You Rather'")
 async def wouldyourather(interaction: discord.Interaction):
     questions = load_wyr_questions()
     question = random.choice(questions)
@@ -863,7 +863,7 @@ def load_tod_questions():
         return json.load(file)
 
 # Define the Truth or Dare command
-@bot.tree.command(name="truthorDare", description="Play 'Truth or Dare'", guild=None)  # global command
+@bot.tree.command(name="truthorDare", description="Play 'Truth or Dare'")
 async def truthorDare(interaction: discord.Interaction):
     questions = load_tod_questions()
 
