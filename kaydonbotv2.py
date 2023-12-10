@@ -808,7 +808,7 @@ async def on_guild_join(guild):
     )
     embed.add_field(name="Prefix", value="';' for non-slash commands", inline=False)
     embed.add_field(name="Commands", value="Use `/commands` to see all my commands", inline=False)
-    embed.set_footer(text="Kaydonbot - Here to assist you")
+    embed.set_footer(text="Kaydonbot - Copyright (c) Kayden Cormier -- K-GamesMedia")
 
     # Find a channel to send the welcome message
     for channel in guild.text_channels:
