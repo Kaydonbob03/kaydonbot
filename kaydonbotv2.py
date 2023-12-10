@@ -761,7 +761,8 @@ from discord import app_commands
 
 
 # # Run the bot with your token
-# bot.run('MTE4MTE0Mzg1NDk1OTgzNzE4NA.GvyQxQ.7AXQUI2YtMC8lKPbXsJigwSQqV-penF1ACUXzY') 
+# bot.run(os.getenv('DISCORD_BOT_TOKEN'))
+
 
 # # --------------------------------------------------BOT TOKEN ENDS--------------------------------------------------------
 
@@ -1510,7 +1511,7 @@ async def on_reaction_add_battle(reaction, user):
 
 
 # Run the bot with your token
-bot.run('MTE4MTE0Mzg1NDk1OTgzNzE4NA.GvyQxQ.7AXQUI2YtMC8lKPbXsJigwSQqV-penF1ACUXzY') 
+bot.run(os.getenv('DISCORD_BOT_TOKEN'))
 
 # --------------------------------------------------BOT TOKEN ENDS--------------------------------------------------------
 
