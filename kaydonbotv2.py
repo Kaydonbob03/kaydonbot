@@ -50,18 +50,27 @@ async def on_guild_join(guild):
     embed = discord.Embed(
         title="Hello! I'm Kaydonbot",
         description="Thanks for inviting me to your server!",
-        color=discord.Color.blue()
+        color=discord.Color.gold()
     )
     embed.add_field(name="Prefix", value="; for non-slash commands", inline=False)
     embed.add_field(name="Commands", value="Use `/commands` to see all my commands", inline=False)
     embed.set_footer(text="Kaydonbot - Copyright (c) Kayden Cormier -- K-GamesMedia")
 
-    # Find a channel to send the welcome message
+       # List of preferred channel names
+    preferred_channels = ["welcome", "general", "mod-chat", "mods-only"]
+
+    # Try to find a preferred channel
+    for channel_name in preferred_channels:
+        channel = discord.utils.get(guild.text_channels, name=channel_name)
+        if channel and channel.permissions_for(guild.me).send_messages:
+            await channel.send(embed=embed)
+            return
+
+    # If no preferred channel is found, send in any channel where the bot has permission
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send(embed=embed)
             break
-
 
 
 # -------------------------------------------------INITIALIZATION ENDS--------------------------------------------------
@@ -204,21 +213,15 @@ async def wyrsuggestion(interaction: discord.Interaction, suggestion: str):
 # ---------------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------MOD-ONLY COMMANDS-------------------------------------------------------
 
-# Send welcome message on user join
-@bot.event
-async def on_member_join(member):
-    guild_id = member.guild.id
-    channel_id = welcome_channels.get(guild_id)
-    channel = member.guild.get_channel(channel_id) if channel_id else discord.utils.get(member.guild.text_channels, name='welcome')
-    if channel:
-        await channel.send(f"Welcome to the server, {member.mention}!")
-
 # Check if user is admin/mod
 def is_admin_or_mod():
     async def predicate(interaction: discord.Interaction):
         return interaction.user.guild_permissions.administrator or \
                any(role.name.lower() in ['admin', 'moderator'] for role in interaction.user.roles)
     return app_commands.check(predicate)
+
+#******************************WELCOME MESSAGE******************************
+
     
 def save_welcome_channels():
     with open('welcome_channels.json', 'w') as file:
@@ -236,18 +239,83 @@ async def load_welcome_channels():
                 fallback_channels[guild.id] = welcome_channel.id
         return fallback_channels
         
-# Define a slash command for 'welcomeconfig'
+# Global dictionary to store temporary configuration data
+temp_config = {}
+
 @bot.tree.command(name="welcomeconfig", description="Configure the welcome channel")
 @is_admin_or_mod()
-async def welcomeconfig(interaction: discord.Interaction, channel: discord.TextChannel):
+async def welcomeconfig(interaction: discord.Interaction):
     try:
         await interaction.response.defer()
-        guild_id = interaction.guild_id
-        welcome_channels[guild_id] = channel.id
-        save_welcome_channels() 
-        await interaction.followup.send(f"Welcome channel set to {channel.mention}")
+
+        # Initiate the configuration process
+        temp_config[interaction.guild_id] = {"stage": 1}  # Stage 1: Ask for channel
+
+        embed = discord.Embed(
+            title="Welcome Configuration",
+            description="Welcome to the welcome config settings.\nPlease specify a channel to send the welcome message to.",
+            color=discord.Color.blue()
+        )
+        await interaction.followup.send(embed=embed)
     except Exception as e:
-        await interaction.followup.send(f"Failed to set welcome channel: {e}")
+        await interaction.followup.send(f"Failed to initiate welcome configuration: {e}")
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    guild_id = message.guild.id
+    if guild_id in temp_config and temp_config[guild_id]["stage"] == 1:
+        # Handle channel selection
+        if message.channel_mentions:
+            selected_channel = message.channel_mentions[0]
+            temp_config[guild_id] = {"stage": 2, "channel_id": selected_channel.id}  # Move to stage 2
+
+            embed = discord.Embed(
+                title="Welcome Configuration",
+                description="Channel set successfully. Please specify the custom welcome message.",
+                color=discord.Color.green()
+            )
+            await message.channel.send(embed=embed)
+        else:
+            await message.channel.send("Please mention a valid channel.")
+
+    elif guild_id in temp_config and temp_config[guild_id]["stage"] == 2:
+        # Handle custom welcome message
+        custom_message = message.content
+        channel_id = temp_config[guild_id]["channel_id"]
+        welcome_channels[guild_id] = {"channel_id": channel_id, "message": custom_message}
+        save_welcome_channels()  # Save the configuration
+
+        embed = discord.Embed(
+            title="Welcome Configuration",
+            description="Custom welcome message set successfully.",
+            color=discord.Color.gold()
+        )
+        await message.channel.send(embed=embed)
+
+        # Clear temporary configuration data
+        del temp_config[guild_id]
+
+# Send welcome message on user join
+@bot.event
+async def on_member_join(member):
+    guild_id = member.guild.id
+    if guild_id in welcome_channels:
+        channel_id = welcome_channels[guild_id]["channel_id"]
+        custom_message = welcome_channels[guild_id]["message"]
+        channel = member.guild.get_channel(channel_id)
+
+        if channel:
+            await channel.send(custom_message.format(member=member.mention))
+    else:
+        # Fallback to default message if no custom configuration is found
+        channel = discord.utils.get(member.guild.text_channels, name='welcome')
+        if channel:
+            await channel.send(f"Welcome to the server, {member.mention}!")
+
+#****************************WELCOME MESSAGE ENDS****************************
 
 # Define a slash command for 'msgclear'
 @bot.tree.command(name="msgclear", description="Clear a specified number of messages in a channel")
@@ -565,7 +633,7 @@ async def random_choice(interaction: discord.Interaction, choices_str: str):
             await interaction.followup.send("Please provide at least two choices, separated by commas.")
             return
 
-        selected_choice = random.choice(choices).strip()  # Randomly select a choice and strip whitespace
+        selected_choice = random.choice(choices).strip()  
         await interaction.followup.send(f"Randomly selected: {selected_choice}")
     except Exception as e:
         await interaction.followup.send(f"Failed to make a random choice: {e}")
@@ -575,7 +643,11 @@ async def random_choice(interaction: discord.Interaction, choices_str: str):
 async def weather(interaction: discord.Interaction, location: str):
     try:
         await interaction.response.defer()
-        api_key = "52e9d4784cbc8ca2002aa20ab4af8aa8"
+        api_key = os.getenv("OPENWEATHER_API_KEY")  # Fetch the API key from an environment variable
+        if not api_key:
+            await interaction.followup.send("Weather API key not set.")
+            return
+
         url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric"
         response = requests.get(url).json()
 
