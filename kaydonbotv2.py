@@ -31,7 +31,11 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix=';', intents=intents)
 
+# Global dictionary to store welcome channel configurations
 welcome_channels = {}
+
+# Global dictionary to store temporary configuration data
+temp_config = {}
 
 # Event listener for when the bot is ready
 @bot.event
@@ -116,7 +120,7 @@ def get_mod_commands_embed():
         color=discord.Color.green()
     )
     # Add fields for each moderator command
-    embed.add_field(name="/welcomeconfig", value="Configure the welcome message channel", inline=False)
+    embed.add_field(name="/welcomeconfig", value="Configuration for user welcome message", inline=False)
     embed.add_field(name="/msgclear [channel] [number]", value="Clear a specified number of messages in a channel", inline=False)
     embed.add_field(name="/mute [member] [duration] [reason]", value="Mute a member", inline=False)
     embed.add_field(name="/unmute [member]", value="Unmute a member", inline=False)
@@ -222,25 +226,23 @@ def is_admin_or_mod():
 
 #******************************WELCOME MESSAGE******************************
 
-    
 def save_welcome_channels():
-    with open('welcome_channels.json', 'w') as file:
-        json.dump(welcome_channels, file)
-        
+    try:
+        with open('welcome_channels.json', 'w') as file:
+            json.dump(welcome_channels, file, indent=4)
+    except Exception as e:
+        print(f"Error saving welcome channels: {e}")
+        # Consider logging this error or handling it appropriately
+
 async def load_welcome_channels():
+    global welcome_channels
     try:
         with open('welcome_channels.json', 'r') as file:
-            return json.load(file)
+            welcome_channels = json.load(file)
     except FileNotFoundError:
-        fallback_channels = {}
-        for guild in bot.guilds:
-            welcome_channel = discord.utils.get(guild.text_channels, name='welcome')
-            if welcome_channel:
-                fallback_channels[guild.id] = welcome_channel.id
-        return fallback_channels
-        
-# Global dictionary to store temporary configuration data
-temp_config = {}
+        welcome_channels = {}
+        # Consider logging this error or handling it appropriately
+
 
 @bot.tree.command(name="welcomeconfig", description="Configure the welcome channel")
 @is_admin_or_mod()
@@ -249,16 +251,19 @@ async def welcomeconfig(interaction: discord.Interaction):
         await interaction.response.defer()
 
         # Initiate the configuration process
-        temp_config[interaction.guild_id] = {"stage": 1}  # Stage 1: Ask for channel
+        temp_config[interaction.guild_id] = {"stage": 1}  # Stage 1: Ask to enable/disable
 
         embed = discord.Embed(
             title="Welcome Configuration",
-            description="Welcome to the welcome config settings.\nPlease specify a channel to send the welcome message to.",
-            color=discord.Color.blue()
+            description="Welcome to the welcome config settings.\n\n"
+                        "1. Please type 'enable' to enable welcome messages or 'disable' to disable them.\n"
+                        "2. If enabled, you will be prompted to specify a channel and set a custom welcome message.",
+            color=discord.Color.gold()
         )
         await interaction.followup.send(embed=embed)
     except Exception as e:
         await interaction.followup.send(f"Failed to initiate welcome configuration: {e}")
+
 
 @bot.event
 async def on_message(message):
@@ -266,54 +271,70 @@ async def on_message(message):
         return
 
     guild_id = message.guild.id
-    if guild_id in temp_config and temp_config[guild_id]["stage"] == 1:
-        # Handle channel selection
-        if message.channel_mentions:
-            selected_channel = message.channel_mentions[0]
-            temp_config[guild_id] = {"stage": 2, "channel_id": selected_channel.id}  # Move to stage 2
+    if guild_id in temp_config:
+        if temp_config[guild_id]["stage"] == 1:
+            # Handle enabling/disabling welcome messages
+            content_lower = message.content.strip().lower()
+            if content_lower == 'enable':
+                temp_config[guild_id] = {"stage": 2, "enabled": True}  # Move to stage 2
+                await message.channel.send("Welcome messages enabled. Please mention the channel for welcome messages.")
+            elif content_lower == 'disable':
+                welcome_channels[guild_id] = {"enabled": False}
+                save_welcome_channels()
+                await message.channel.send("Welcome messages will be disabled. They can always be enabled later.")
+                del temp_config[guild_id]
+            else:
+                await message.channel.send("Please type 'enable' or 'disable'.")
+
+        elif temp_config[guild_id]["stage"] == 2:
+            # Handle channel selection
+            if message.channel_mentions:
+                selected_channel = message.channel_mentions[0]
+                temp_config[guild_id] = {"stage": 3, "channel_id": selected_channel.id, "enabled": True}  # Move to stage 3
+                embed = discord.Embed(
+                    title="Welcome Configuration",
+                    description="Channel set successfully. Please specify the custom welcome message.",
+                    color=discord.Color.green()
+                )
+                await message.channel.send(embed=embed)
+            else:
+                await message.channel.send("Please mention a valid channel.")
+
+        elif temp_config[guild_id]["stage"] == 3:
+            # Handle custom welcome message
+            custom_message = message.content
+            channel_id = temp_config[guild_id]["channel_id"]
+            welcome_channels[guild_id] = {"channel_id": channel_id, "message": custom_message, "enabled": True}
+            save_welcome_channels()  # Save the configuration
 
             embed = discord.Embed(
                 title="Welcome Configuration",
-                description="Channel set successfully. Please specify the custom welcome message.",
-                color=discord.Color.green()
+                description="Custom welcome message set successfully.",
+                color=discord.Color.gold()
             )
             await message.channel.send(embed=embed)
-        else:
-            await message.channel.send("Please mention a valid channel.")
 
-    elif guild_id in temp_config and temp_config[guild_id]["stage"] == 2:
-        # Handle custom welcome message
-        custom_message = message.content
-        channel_id = temp_config[guild_id]["channel_id"]
-        welcome_channels[guild_id] = {"channel_id": channel_id, "message": custom_message}
-        save_welcome_channels()  # Save the configuration
+            # Clear temporary configuration data
+            del temp_config[guild_id]
 
-        embed = discord.Embed(
-            title="Welcome Configuration",
-            description="Custom welcome message set successfully.",
-            color=discord.Color.gold()
-        )
-        await message.channel.send(embed=embed)
-
-        # Clear temporary configuration data
-        del temp_config[guild_id]
 
 # Send welcome message on user join
 @bot.event
 async def on_member_join(member):
     guild_id = member.guild.id
-    if guild_id in welcome_channels:
-        channel_id = welcome_channels[guild_id]["channel_id"]
-        custom_message = welcome_channels[guild_id]["message"]
-        channel = member.guild.get_channel(channel_id)
+    if guild_id in welcome_channels and welcome_channels[guild_id].get("enabled", False):
+        channel_id = welcome_channels[guild_id].get("channel_id")
+        custom_message = welcome_channels[guild_id].get("message", f"Welcome to the server, {member.mention}!")
+        channel = member.guild.get_channel(channel_id) if channel_id else None
 
         if channel:
             await channel.send(custom_message.format(member=member.mention))
     else:
-        # Fallback to default message if no custom configuration is found
+        # Fallback to default message if no custom configuration is found or welcome messages are disabled
         channel = discord.utils.get(member.guild.text_channels, name='welcome')
         if channel:
             await channel.send(f"Welcome to the server, {member.mention}!")
+
 
 #****************************WELCOME MESSAGE ENDS****************************
 
