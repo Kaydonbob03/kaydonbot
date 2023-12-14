@@ -806,10 +806,12 @@ async def blackjack(interaction: discord.Interaction):
     # Check for Blackjack on initial deal
     if is_blackjack(player_hand) or is_blackjack(dealer_hand):
         await interaction.response.send_message("Checking for Blackjack...")
+        message = await interaction.original_response()
         await update_game_message(message, player_hand, dealer_hand, game_over=True)
         return
 
-    message = await interaction.response.send_message("Starting Blackjack game...")
+    await interaction.response.send_message("Starting Blackjack game...")
+    message = await interaction.original_response()
     await update_game_message(message, player_hand, dealer_hand)
 
     # Add reactions for player actions
