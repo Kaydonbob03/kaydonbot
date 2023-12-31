@@ -110,7 +110,7 @@ def get_general_commands_embed():
     embed.add_field(name="/reminder [time] [reminder]", value="Set a reminder", inline=False)
     embed.add_field(name="/poll [question] [options]", value="Create a poll", inline=False)
     embed.add_field(name="/random [choices]", value="Make a random choice", inline=False)
-    embed.set_footer(text="Page 1/3")
+    embed.set_footer(text="Page 1/4")
     return embed
 
 def get_mod_commands_embed():
@@ -131,7 +131,7 @@ def get_mod_commands_embed():
     embed.add_field(name="/announce [channel] [message]", value="Send an announcement", inline=False)
     embed.add_field(name="/addrole [member] [role]", value="Add a role to a member", inline=False)
     embed.add_field(name="/removerole [member] [role]", value="Remove a role from a member", inline=False)
-    embed.set_footer(text="Page 3/3")
+    embed.set_footer(text="Page 3/4")
     return embed
 
 def get_bot_games_commands_embed():
@@ -145,7 +145,7 @@ def get_bot_games_commands_embed():
     embed.add_field(name="/wouldyourather", value="Play a round of Would You Rather", inline=False)
     embed.add_field(name="/truthordare", value="Play a fun little Truth or Dare game", inline=False)
     # Add more bot game commands here
-    embed.set_footer(text="Page 2/3")
+    embed.set_footer(text="Page 2/4")
     return embed
 
 def get_suggestions_commands_embed():
@@ -243,7 +243,6 @@ async def load_welcome_channels():
         welcome_channels = {}
         # Consider logging this error or handling it appropriately
 
-
 @bot.tree.command(name="welcomeconfig", description="Configure the welcome channel")
 @is_admin_or_mod()
 async def welcomeconfig(interaction: discord.Interaction):
@@ -263,7 +262,6 @@ async def welcomeconfig(interaction: discord.Interaction):
         await interaction.followup.send(embed=embed)
     except Exception as e:
         await interaction.followup.send(f"Failed to initiate welcome configuration: {e}")
-
 
 @bot.event
 async def on_message(message):
@@ -317,7 +315,6 @@ async def on_message(message):
             # Clear temporary configuration data
             del temp_config[guild_id]
 
-
 # Send welcome message on user join
 @bot.event
 async def on_member_join(member):
@@ -334,7 +331,6 @@ async def on_member_join(member):
         channel = discord.utils.get(member.guild.text_channels, name='welcome')
         if channel:
             await channel.send(f"Welcome to the server, {member.mention}!")
-
 
 #****************************WELCOME MESSAGE ENDS****************************
 
@@ -806,12 +802,10 @@ async def blackjack(interaction: discord.Interaction):
     # Check for Blackjack on initial deal
     if is_blackjack(player_hand) or is_blackjack(dealer_hand):
         await interaction.response.send_message("Checking for Blackjack...")
-        message = await interaction.original_response()
         await update_game_message(message, player_hand, dealer_hand, game_over=True)
         return
 
-    await interaction.response.send_message("Starting Blackjack game...")
-    message = await interaction.original_response()
+    message = await interaction.response.send_message("Starting Blackjack game...")
     await update_game_message(message, player_hand, dealer_hand)
 
     # Add reactions for player actions
