@@ -7,7 +7,7 @@ import random
 import asyncio
 import dateparser
 import datetime
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 
 
@@ -37,6 +37,21 @@ welcome_channels = {}
 # Global dictionary to store temporary configuration data
 temp_config = {}
 
+# Status'
+@tasks.loop(hours=1)  # Change status every hour
+async def change_status():
+    await bot.wait_until_ready()
+    # Get the number of servers the bot is in
+    num_servers = len(bot.guilds)
+    # Define the statuses
+    statuses = [
+        discord.Activity(type=discord.ActivityType.watching, name="/commands"),
+        discord.Game(f"in {num_servers} servers")
+    ]
+    # Choose a random status and set it
+    current_status = random.choice(statuses)
+    await bot.change_presence(activity=current_status)
+
 # Event listener for when the bot is ready
 @bot.event
 async def on_ready():
@@ -46,6 +61,7 @@ async def on_ready():
     welcome_channels = await load_welcome_channels()
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
+    change_status.start()
 
 
 @bot.event
@@ -294,7 +310,7 @@ async def on_message(message):
                     description="Channel set successfully. Please specify the custom welcome message.",
                     color=discord.Color.green()
                 )
-                await message.channel.send(embed=embed)
+                await message.channel.send(embed=embed) 
             else:
                 await message.channel.send("Please mention a valid channel.")
 
