@@ -49,7 +49,7 @@ async def change_status():
         discord.Game(f"in {num_servers} servers")
     ]
     # Choose a random status and set it
-    current_status = random.choice(statuses)
+    current_status = random.choice(statuses) 
     await bot.change_presence(activity=current_status)
 
 # Event listener for when the bot is ready
@@ -556,14 +556,29 @@ async def chat(interaction: discord.Interaction, prompt: str):
         {"role": "user", "content": prompt}
     ]
 
-    # Call OpenAI Chat Completions API with the prompt
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages
-    )
+    # List of models to try in order
+    models = ["gpt-4-1106-preview", "gpt-4", "gpt-3.5-turbo"]
+    response_sent = False
 
-    # Send the response back to Discord
-    await interaction.response.send_message(response['choices'][0]['message']['content'])
+    for model in models:
+        try:
+            # Call OpenAI Chat Completions API with the current model
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=messages
+            )
+
+            # Send the response back to Discord and mark as sent
+            await interaction.response.send_message(response['choices'][0]['message']['content'])
+            response_sent = True
+            break
+        except Exception as e:
+            # If there's an error (like model not available), continue to the next model
+            continue
+
+    # If no response was sent, notify the user
+    if not response_sent:
+        await interaction.response.send_message("Sorry, I'm unable to get a response at the moment.")
 
 # Function to call DALL-E 3 API
 async def generate_dalle_image(prompt: str):
