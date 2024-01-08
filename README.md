@@ -1,11 +1,11 @@
 # Kaydonbotv2 Discord Bot
 
-KaydonBotV2 is a Discord bot designed to enhance the functionality and interactivity of Discord servers. It integrates features like greeting new members, responding to user prompts using GPT-3.5, and generating images with DALL-E 3.
+KaydonBotV2 is a Discord bot designed to enhance the functionality and interactivity of Discord servers. It integrates features like greeting new members, responding to user prompts using GPT-4-turbo, and generating images with DALL-E 3.
 
 ## Features
 
 - **Welcome Messages**: Sends a custom welcome message to new members in a designated channel.
-- **GPT-3.5 Integration**: Interacts with users by responding to prompts using OpenAI's GPT-3.5 model.
+- **GPT-4 Integration**: Interacts with users by responding to prompts using OpenAI's gpt-4-1106-preview model.
 - **DALL-E 3 Image Generation**: Generates images based on user prompts using OpenAI's DALL-E 3.
 
 ## Installation
