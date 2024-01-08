@@ -26,9 +26,10 @@ from discord import app_commands
 # Set your OpenAI API key (ensure this is set in your environment variables)
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-# Create a bot instance
+# Define intents
 intents = discord.Intents.default()
-intents.members = True
+intents.messages = True  # If you need access to messages
+intents.message_content = True  
 bot = commands.Bot(command_prefix=';', intents=intents)
 
 # Global dictionary to store welcome channel configurations
