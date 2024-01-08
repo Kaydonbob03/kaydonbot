@@ -1,0 +1,9 @@
+# Ignore virtual environment
+venv/
+
+# Ignore nohup output file
+nohup.out
+
+# Ignore weird second instance of this folder
+hosting/suggestions/
+
