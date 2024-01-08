@@ -1,0 +1,9 @@
+python3: can't open file '/hosting/kaydonbotv2.py': [Errno 2] No such file or directory
+Traceback (most recent call last):
+  File "/home/kayden/hosting/kaydonbotv2.py", line 2, in <module>
+    import discord
+ModuleNotFoundError: No module named 'discord'
+Traceback (most recent call last):
+  File "/home/kayden/hosting/kaydonbotv2.py", line 2, in <module>
+    import discord
+ModuleNotFoundError: No module named 'discord'
