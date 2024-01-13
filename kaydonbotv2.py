@@ -556,59 +556,46 @@ async def removerole(interaction: discord.Interaction, member: discord.Member, r
 
 @bot.tree.command(name="chat", description="Get a response from GPT")
 async def chat(interaction: discord.Interaction, prompt: str):
-    # Defer the response to give more time for processing
     await interaction.response.defer()
 
-    # List of models to try in order
-    models = ["gpt-4-1106-preview", "gpt-4", "gpt-3.5-turbo"]
-    response_sent = False
-
-    for model in models:
+    async def fetch_response(model):
         try:
-            # Prepare the chat messages for the API call
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ]
-
-            # Call OpenAI Chat Completions API with the current model
-            response = await client.chat.completions.create(
-                model=model,
-                messages=messages
-            )
-
-            # Send the response back to Discord
-            await interaction.followup.send(response.choices[0].essage.content.strip())
-            response_sent = True
-            break
+            start_time = time.time()
+            messages = [{"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": prompt}]
+            response = await client.chat.completions.create(model=model, messages=messages)
+            end_time = time.time()
+            print(f"Response from {model} received in {end_time - start_time} seconds")
+            return response.choices[0].message.content.strip()
         except Exception as e:
-            # Log the error for debugging
             print(f"Error with model {model}: {e}")
+            return None
 
-    # If no response was sent, notify the user
-    if not response_sent:
-        await interaction.followup.send("Sorry, I'm unable to get a response at the moment.")
+    models = ["gpt-4-1106-preview", "gpt-4", "gpt-3.5-turbo"]
+    for model in models:
+        response_task = asyncio.create_task(fetch_response(model))
+        response = await response_task
+        if response:
+            await interaction.followup.send(response)
+            return
+
+    await interaction.followup.send("Sorry, I'm unable to get a response at the moment.")
 
 async def generate_dalle_image(prompt: str):
     try:
-        # Generate an image using DALL-E 3
-        response = await client.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            n=1,
-            size="1024x1024"
-        )
-
-        # Extract the image URL from the response
-        image_url = response.data[0].url
-        return image_url
+        response = await client.images.generate(model="dall-e-3", prompt=prompt, n=1, size="1024x1024")
+        if response.data and len(response.data) > 0:
+            image_url = response.data[0].url
+            return image_url
+        else:
+            print("No image data found in the response.")
+            return None
     except Exception as e:
         print(f"Error generating image: {e}")
         return None
 
 @bot.tree.command(name="image", description="Generate an image using DALL-E 3")
 async def image(interaction: discord.Interaction, prompt: str):
-    # Defer the response to give more time for processing
     await interaction.response.defer()
 
     image_url = await generate_dalle_image(prompt)
