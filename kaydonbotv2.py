@@ -554,7 +554,6 @@ async def removerole(interaction: discord.Interaction, member: discord.Member, r
 # ---------------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------OPENAI COMMANDS---------------------------------------------------------
 
-
 @bot.tree.command(name="chat", description="Get a response from GPT")
 async def chat(interaction: discord.Interaction, prompt: str):
     # Defer the response to give more time for processing
@@ -579,12 +578,12 @@ async def chat(interaction: discord.Interaction, prompt: str):
             )
 
             # Send the response back to Discord
-            await interaction.followup.send(response.choices[0].message.content.strip())
+            await interaction.followup.send(response.choices[0].essage.content.strip())
             response_sent = True
             break
         except Exception as e:
-            # If there's an error (like model not available), continue to the next model
-            continue
+            # Log the error for debugging
+            print(f"Error with model {model}: {e}")
 
     # If no response was sent, notify the user
     if not response_sent:
