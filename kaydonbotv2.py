@@ -555,9 +555,11 @@ async def removerole(interaction: discord.Interaction, member: discord.Member, r
 # ---------------------------------------------------OPENAI COMMANDS---------------------------------------------------------
 
 
-# Define a slash command for 'chat'
 @bot.tree.command(name="chat", description="Get a response from GPT")
 async def chat(interaction: discord.Interaction, prompt: str):
+    # Defer the response to give more time for processing
+    await interaction.response.defer()
+
     # List of models to try in order
     models = ["gpt-4-1106-preview", "gpt-4", "gpt-3.5-turbo"]
     response_sent = False
@@ -576,8 +578,8 @@ async def chat(interaction: discord.Interaction, prompt: str):
                 messages=messages
             )
 
-            # Send the response back to Discord and mark as sent
-            await interaction.response.send_message(response.choices[0].message.content.strip())
+            # Send the response back to Discord
+            await interaction.followup.send(response.choices[0].message.content.strip())
             response_sent = True
             break
         except Exception as e:
@@ -586,7 +588,7 @@ async def chat(interaction: discord.Interaction, prompt: str):
 
     # If no response was sent, notify the user
     if not response_sent:
-        await interaction.response.send_message("Sorry, I'm unable to get a response at the moment.")
+        await interaction.followup.send("Sorry, I'm unable to get a response at the moment.")
 
 async def generate_dalle_image(prompt: str):
     try:
