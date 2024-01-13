@@ -1,6 +1,5 @@
 import os
 import discord
-import openai
 import json
 import requests
 import random
@@ -9,6 +8,7 @@ import dateparser
 import datetime
 from discord.ext import commands, tasks
 from discord import app_commands
+from openai import OpenAI
 
 
 # =======================================================================================================================================
@@ -23,8 +23,15 @@ from discord import app_commands
 
 # --------------------------------------------------INITIALIZATION------------------------------------------------------
 
-# Set your OpenAI API key (ensure this is set in your environment variables)
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Retrieve your OpenAI API key from an environment variable
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
+# Check if the API key is set
+if not openai_api_key:
+    raise ValueError("The OpenAI API key is not set in the environment variables.")
+
+# Initialize the OpenAI client with the API key
+client = OpenAI(api_key=openai_api_key)
 
 # Define intents
 intents = discord.Intents.default()
@@ -551,26 +558,26 @@ async def removerole(interaction: discord.Interaction, member: discord.Member, r
 # Define a slash command for 'chat'
 @bot.tree.command(name="chat", description="Get a response from GPT")
 async def chat(interaction: discord.Interaction, prompt: str):
-    # Prepare the chat messages for the API call
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": prompt}
-    ]
-
     # List of models to try in order
     models = ["gpt-4-1106-preview", "gpt-4", "gpt-3.5-turbo"]
     response_sent = False
 
     for model in models:
         try:
+            # Prepare the chat messages for the API call
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ]
+
             # Call OpenAI Chat Completions API with the current model
-            response = openai.ChatCompletion.create(
+            response = await client.chat.completions.create(
                 model=model,
                 messages=messages
             )
 
             # Send the response back to Discord and mark as sent
-            await interaction.response.send_message(response['choices'][0]['message']['content'])
+            await interaction.response.send_message(response.choices[0].message.content.strip())
             response_sent = True
             break
         except Exception as e:
@@ -581,23 +588,23 @@ async def chat(interaction: discord.Interaction, prompt: str):
     if not response_sent:
         await interaction.response.send_message("Sorry, I'm unable to get a response at the moment.")
 
-# Function to call DALL-E 3 API
 async def generate_dalle_image(prompt: str):
     try:
-        response = openai.Image.create(
+        # Generate an image using DALL-E 3
+        response = await client.images.generate(
             model="dall-e-3",
             prompt=prompt,
-            size="1024x1024",
-            quality="standard",
             n=1,
+            size="1024x1024"
         )
-        image_url = response['data'][0]['url']
+
+        # Extract the image URL from the response
+        image_url = response.data[0].url
         return image_url
     except Exception as e:
         print(f"Error generating image: {e}")
         return None
 
-# Define a slash command for 'image'
 @bot.tree.command(name="image", description="Generate an image using DALL-E 3")
 async def image(interaction: discord.Interaction, prompt: str):
     # Defer the response to give more time for processing
