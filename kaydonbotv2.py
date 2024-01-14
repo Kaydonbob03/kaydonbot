@@ -597,12 +597,12 @@ async def hardban(interaction: discord.Interaction):
     try:
         reply = await bot.wait_for('message', check=check, timeout=60.0)
         
-        # Debugging: Log the reply content and mentions
-        print(f"Reply Content: {reply.content}")
-        print(f"Reply Mentions: {reply.mentions}")
-
-        # Extract user ID from the reply, making sure to exclude the bot's own ID
-        user_id = next((user.id for user in reply.mentions if user != bot.user), None)
+        # Attempt to extract the user ID from the mentions, excluding the bot itself
+        user_id = None
+        for user in reply.mentions:
+            if user != bot.user:
+                user_id = user.id
+                break
         
         # If no valid user ID is found in the mentions, attempt to convert from content
         if user_id is None:
