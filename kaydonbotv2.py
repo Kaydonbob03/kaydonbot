@@ -12,13 +12,7 @@ from openai import OpenAI
 
 
 # =======================================================================================================================================
-# =========================================================={GUILD/TESTING ID BLOCK}=====================================================
-# =======================================================================================================================================
-
-# insert the script in the text file here if the global script below is broken
-
-# =======================================================================================================================================
-# =========================================================={NO GUILD ID BLOCK}==========================================================
+# ==========================================================={BOT STARTS HERE}===========================================================
 # =======================================================================================================================================
 
 # --------------------------------------------------INITIALIZATION------------------------------------------------------
@@ -339,10 +333,24 @@ async def on_message(message):
             # Clear temporary configuration data
             del temp_config[guild_id]
 
-# Send welcome message on user join
 @bot.event
 async def on_member_join(member):
-    guild_id = member.guild.id
+    # Auto-ban logic
+    data = read_hardban()
+    guild_id = str(member.guild.id)
+    user_id = member.id
+
+    if guild_id in data and user_id in data[guild_id]:
+        try:
+            await member.ban(reason="User is on the hardban list")
+            print(f"Banned user {user_id} from guild {guild_id} (on hardban list)")
+            return  # Stop further execution if the member is banned
+        except discord.Forbidden:
+            print(f"Failed to ban user {user_id} from guild {guild_id} (lack permissions)")
+        except Exception as e:
+            print(f"Error banning user {user_id} from guild {guild_id}: {e}")
+
+    # Welcome message logic
     if guild_id in welcome_channels and welcome_channels[guild_id].get("enabled", False):
         channel_id = welcome_channels[guild_id].get("channel_id")
         custom_message = welcome_channels[guild_id].get("message", f"Welcome to the server, {member.mention}!")
@@ -547,6 +555,64 @@ async def removerole(interaction: discord.Interaction, member: discord.Member, r
         await interaction.followup.send(f"Removed {role.name} role from {member.mention}.")
     except Exception as e:
         await interaction.followup.send(f"Failed to remove role: {e}")
+
+
+# Path to the JSON file
+hardban_json = 'hardban_list.json'
+
+# Function to read data from the JSON file
+def read_hardban():
+    if not os.path.exists(hardban_json):
+        return {}
+    with open(hardban_json, 'r') as file:
+        return json.load(file)
+
+# Function to write data to the JSON file
+def write_json(data):
+    with open(hardban_json, 'w') as file:
+        json.dump(data, file, indent=4)
+
+@bot.tree.command(name="hardban", description="Set up automatic ban for specified users when they join the server")
+@app_commands.check(is_admin_or_mod)  # This ensures only admins/mods can use this command
+async def hardban(interaction: discord.Interaction):
+    # Sending an initial response
+    embed = discord.Embed(title="HardBan Setup",
+                          description="Please reply to this message with the user ID or @mention the user to have them automatically banned when they join this server.",
+                          color=discord.Color.blue())
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    def check(message):
+        return message.reference is not None and \
+               message.reference.message_id == interaction.message.id and \
+               message.author.id == interaction.user.id
+
+    try:
+        reply = await bot.wait_for('message', check=check, timeout=60.0)
+    except asyncio.TimeoutError:
+        await interaction.followup.send("You didn't reply in time!", ephemeral=True)
+    else:
+        # Extract user ID from the reply
+        user_id = None
+        if reply.mentions:
+            user_id = reply.mentions[0].id
+        else:
+            try:
+                user_id = int(reply.content)
+            except ValueError:
+                await interaction.followup.send("Invalid user ID provided.", ephemeral=True)
+                return
+
+        # Read the current data, update it, and write back to the file
+        data = read_hardban()
+        guild_id = str(interaction.guild_id)
+        if guild_id in data:
+            if user_id not in data[guild_id]:
+                data[guild_id].append(user_id)
+        else:
+            data[guild_id] = [user_id]
+
+        write_json(data)
+        await interaction.followup.send(f"User with ID {user_id} has been set for automatic ban on joining.", ephemeral=True)
 
 
 
