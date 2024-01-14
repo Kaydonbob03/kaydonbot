@@ -586,27 +586,28 @@ async def hardban(interaction: discord.Interaction):
     embed = discord.Embed(title="HardBan Setup",
                           description="Please reply to this message with the user ID or @mention the user to have them automatically banned when they join this server.",
                           color=discord.Color.blue())
-    await interaction.response.send_message(embed=embed)
+    bot_message = await interaction.response.send_message(embed=embed)  # Store the bot's message
 
     def check(message):
-        # Check that the bot is not included in the mentions and the author is the user
+        # Check that the reply is in the same channel and by the user who invoked the command
         return message.channel.id == interaction.channel.id and \
                message.author.id == interaction.user.id and \
-               bot.user not in message.mentions
+               (message.reference is None or message.reference.message_id == bot_message.id)
 
     try:
         reply = await bot.wait_for('message', check=check, timeout=60.0)
+        
         # Debugging: Log the reply content and mentions
         print(f"Reply Content: {reply.content}")
         print(f"Reply Mentions: {reply.mentions}")
 
-        # Extract user ID from the reply, ensuring the bot's ID is not considered
-        user_id = next((user.id for user in reply.mentions if user.id != bot.user.id), None)
+        # Extract user ID from the reply, making sure to exclude the bot's own ID
+        user_id = next((user.id for user in reply.mentions if user != bot.user), None)
         
         # If no valid user ID is found in the mentions, attempt to convert from content
         if user_id is None:
             try:
-                user_id = int(reply.content.strip())
+                user_id = int(reply.content)
             except ValueError:
                 await interaction.followup.send("Invalid user ID provided.", ephemeral=True)
                 return
@@ -616,14 +617,17 @@ async def hardban(interaction: discord.Interaction):
         # Read the current data, update it, and write back to the file
         data = read_hardban()
         guild_id = str(interaction.guild_id)
+        
         # Add user ID to the list for the guild if not already present
-        if user_id not in data.get(guild_id, []):
-            data.setdefault(guild_id, []).append(user_id)
+        if guild_id not in data:
+            data[guild_id] = []
+        if user_id not in data[guild_id]:
+            data[guild_id].append(user_id)
             write_json(data)
             await interaction.followup.send(f"User with ID {user_id} has been set for automatic ban on joining.")
         else:
             await interaction.followup.send(f"User with ID {user_id} is already on the hardban list.", ephemeral=True)
-        
+
     except asyncio.TimeoutError:
         await interaction.followup.send("You didn't reply in time!", ephemeral=True)
     except ValueError:
@@ -632,6 +636,7 @@ async def hardban(interaction: discord.Interaction):
     except Exception as e:
         print(f"An error occurred: {e}")  # Debug print
         await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
+
 
 
 
