@@ -159,6 +159,8 @@ def get_general_commands_embed():
     embed.add_field(name="/reminder [time] [reminder]", value="Set a reminder", inline=False)
     embed.add_field(name="/poll [question] [options]", value="Create a poll", inline=False)
     embed.add_field(name="/random [choices]", value="Make a random choice", inline=False)
+    embed.add_field(name="/scream", value="Bot will scream randomly from a list screams", inline=False)
+    embed.add_field(name="/screamedit [scream]", value="adds a scream to the list if its not already there", inline=False)
     embed.set_footer(text="Page 1/4")
     return embed
 
@@ -829,6 +831,49 @@ async def joke(interaction: discord.Interaction):
         await interaction.followup.send(joke_text)
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve a joke: {e}")
+
+# Path to the JSON file
+scream_json = 'random_scream.json'
+
+# Function to read data from the JSON file
+def read_screams():
+    with open(scream_json, 'r') as file:
+        return json.load(file)['screams']
+
+@bot.tree.command(name="scream", description="Let out a random scream")
+async def scream(interaction: discord.Interaction):
+    screams = read_screams()
+    random_scream = random.choice(screams)
+    await interaction.response.send_message(f"# {random_scream}")
+
+
+# Path to the JSON file
+scream_json = 'random_scream.json'
+
+# Function to read data from the JSON file
+def read_screams():
+    with open(scream_json, 'r') as file:
+        return json.load(file)['screams']
+
+# Function to write data to the JSON file
+def write_screams(screams):
+    with open(scream_json, 'w') as file:
+        json.dump({'screams': screams}, file, indent=4)
+
+@bot.tree.command(name="screamedit", description="Adds a scream to the list if it's not already there")
+async def screamedit(interaction: discord.Interaction, scream: str):
+    # Read the current list of screams
+    screams = read_screams()
+    
+    # Check if the scream is already in the list
+    if scream in screams:
+        await interaction.response.send_message(f"That scream is already in the list!", ephemeral=True)
+    else:
+        # Add the new scream to the list and write back to the JSON file
+        screams.append(scream)
+        write_screams(screams)
+        
+        await interaction.response.send_message(f"New scream added to the list: {scream}", ephemeral=True)
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
