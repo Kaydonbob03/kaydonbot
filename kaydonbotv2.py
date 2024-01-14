@@ -589,19 +589,28 @@ async def hardban(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
     def check(message):
-        # Ensures that the message is a direct response to the bot's message
+        # Check that the bot is not included in the mentions and the author is the user
         return message.channel.id == interaction.channel.id and \
-               message.author.id == interaction.user.id
+               message.author.id == interaction.user.id and \
+               bot.user not in message.mentions
 
     try:
         reply = await bot.wait_for('message', check=check, timeout=60.0)
-        
         # Debugging: Log the reply content and mentions
         print(f"Reply Content: {reply.content}")
         print(f"Reply Mentions: {reply.mentions}")
+
+        # Extract user ID from the reply, ensuring the bot's ID is not considered
+        user_id = next((user.id for user in reply.mentions if user.id != bot.user.id), None)
         
-        # Extract user ID from the reply
-        user_id = reply.mentions[0].id if reply.mentions else int(reply.content.strip())
+        # If no valid user ID is found in the mentions, attempt to convert from content
+        if user_id is None:
+            try:
+                user_id = int(reply.content.strip())
+            except ValueError:
+                await interaction.followup.send("Invalid user ID provided.", ephemeral=True)
+                return
+        
         print(f"User ID received: {user_id}")  # Debug print
 
         # Read the current data, update it, and write back to the file
