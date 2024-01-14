@@ -95,6 +95,37 @@ async def on_guild_join(guild):
             break
 
 
+@bot.event
+async def on_member_join(member):
+    # Auto-ban logic
+    data = read_hardban()
+    guild_id = str(member.guild.id)
+    user_id = member.id
+
+    if guild_id in data and user_id in data[guild_id]:
+        try:
+            await member.ban(reason="User is on the hardban list")
+            print(f"Banned user {user_id} from guild {guild_id} (on hardban list)")
+            return  # Stop further execution if the member is banned
+        except discord.Forbidden:
+            print(f"Failed to ban user {user_id} from guild {guild_id} (lack permissions)")
+        except Exception as e:
+            print(f"Error banning user {user_id} from guild {guild_id}: {e}")
+
+    # Welcome message logic
+    if guild_id in welcome_channels and welcome_channels[guild_id].get("enabled", False):
+        channel_id = welcome_channels[guild_id].get("channel_id")
+        custom_message = welcome_channels[guild_id].get("message", f"Welcome to the server, {member.mention}!")
+        channel = member.guild.get_channel(channel_id) if channel_id else None
+
+        if channel:
+            await channel.send(custom_message.format(member=member.mention))
+    else:
+        # Fallback to default message if no custom configuration is found or welcome messages are disabled
+        channel = discord.utils.get(member.guild.text_channels, name='welcome')
+        if channel:
+            await channel.send(f"Welcome to the server, {member.mention}!")
+
 # -------------------------------------------------INITIALIZATION ENDS--------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 # --------------------------------------------------COMMANDS LIST-------------------------------------------------------
@@ -333,36 +364,6 @@ async def on_message(message):
             # Clear temporary configuration data
             del temp_config[guild_id]
 
-@bot.event
-async def on_member_join(member):
-    # Auto-ban logic
-    data = read_hardban()
-    guild_id = str(member.guild.id)
-    user_id = member.id
-
-    if guild_id in data and user_id in data[guild_id]:
-        try:
-            await member.ban(reason="User is on the hardban list")
-            print(f"Banned user {user_id} from guild {guild_id} (on hardban list)")
-            return  # Stop further execution if the member is banned
-        except discord.Forbidden:
-            print(f"Failed to ban user {user_id} from guild {guild_id} (lack permissions)")
-        except Exception as e:
-            print(f"Error banning user {user_id} from guild {guild_id}: {e}")
-
-    # Welcome message logic
-    if guild_id in welcome_channels and welcome_channels[guild_id].get("enabled", False):
-        channel_id = welcome_channels[guild_id].get("channel_id")
-        custom_message = welcome_channels[guild_id].get("message", f"Welcome to the server, {member.mention}!")
-        channel = member.guild.get_channel(channel_id) if channel_id else None
-
-        if channel:
-            await channel.send(custom_message.format(member=member.mention))
-    else:
-        # Fallback to default message if no custom configuration is found or welcome messages are disabled
-        channel = discord.utils.get(member.guild.text_channels, name='welcome')
-        if channel:
-            await channel.send(f"Welcome to the server, {member.mention}!")
 
 #****************************WELCOME MESSAGE ENDS****************************
 
@@ -573,7 +574,7 @@ def write_json(data):
         json.dump(data, file, indent=4)
 
 @bot.tree.command(name="hardban", description="Set up automatic ban for specified users when they join the server")
-@app_commands.check(is_admin_or_mod)  # This ensures only admins/mods can use this command
+@is_admin_or_mod()
 async def hardban(interaction: discord.Interaction):
     # Sending an initial response
     embed = discord.Embed(title="HardBan Setup",
