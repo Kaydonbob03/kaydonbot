@@ -583,41 +583,31 @@ async def hardban(interaction: discord.Interaction):
     embed = discord.Embed(title="HardBan Setup",
                           description="Please reply to this message with the user ID or @mention the user to have them automatically banned when they join this server.",
                           color=discord.Color.blue())
-    await interaction.response.send_message(embed=embed)  # No longer ephemeral
+    await interaction.response.send_message(embed=embed)
 
     def check(message):
-        # Ensure the message is in the same channel and by the same user who invoked the command
         return message.channel_id == interaction.channel.id and \
                message.author.id == interaction.user.id
 
     try:
         reply = await bot.wait_for('message', check=check, timeout=60.0)
-    except asyncio.TimeoutError:
-        await interaction.followup.send("You didn't reply in time!", ephemeral=True)
-    else:
         # Extract user ID from the reply
-        user_id = None
-        if reply.mentions:
-            user_id = reply.mentions[0].id
-        else:
-            try:
-                user_id = int(reply.content)
-            except ValueError:
-                await interaction.followup.send("Invalid user ID provided.", ephemeral=True)
-                return
+        user_id = reply.mentions[0].id if reply.mentions else reply.content
+        print(f"User ID received: {user_id}")  # Debug print
 
         # Read the current data, update it, and write back to the file
         data = read_hardban()
         guild_id = str(interaction.guild_id)
-        if guild_id in data:
-            if user_id not in data[guild_id]:
-                data[guild_id].append(user_id)
-        else:
-            data[guild_id] = [user_id]
+        data.setdefault(guild_id, []).append(user_id)  # Add user ID to the list for the guild
+        print(f"Updated data to write: {data}")  # Debug print
 
         write_json(data)
-        # Send a new follow-up message to confirm the user has been added to the hardban list
         await interaction.followup.send(f"User with ID {user_id} has been set for automatic ban on joining.")
+    except asyncio.TimeoutError:
+        await interaction.followup.send("You didn't reply in time!", ephemeral=True)
+    except Exception as e:
+        print(f"Error: {e}")  # Debug print
+        await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
 
 
 
