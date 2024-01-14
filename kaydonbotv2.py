@@ -586,7 +586,7 @@ async def hardban(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
     def check(message):
-        return message.channel_id == interaction.channel.id and \
+        return message.channel.id == interaction.channel.id and \
                message.author.id == interaction.user.id
 
     try:
