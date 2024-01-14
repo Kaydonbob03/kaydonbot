@@ -587,7 +587,7 @@ async def hardban(interaction: discord.Interaction):
 
     def check(message):
         # Ensure the message is in the same channel and by the same user who invoked the command
-        return message.channel_id == interaction.channel_id and \
+        return message.channel_id == interaction.channel.id and \
                message.author.id == interaction.user.id
 
     try:
