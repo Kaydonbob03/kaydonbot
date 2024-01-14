@@ -877,14 +877,6 @@ async def scream(interaction: discord.Interaction):
     await interaction.response.send_message(f"# {random_scream}")
 
 
-# Path to the JSON file
-scream_json = 'random_scream.json'
-
-# Function to read data from the JSON file
-def read_screams():
-    with open(scream_json, 'r') as file:
-        return json.load(file)['screams']
-
 # Function to write data to the JSON file
 def write_screams(screams):
     with open(scream_json, 'w') as file:
