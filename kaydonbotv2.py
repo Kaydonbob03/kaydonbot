@@ -580,17 +580,18 @@ async def hardban(interaction: discord.Interaction):
     embed = discord.Embed(title="HardBan Setup",
                           description="Please reply to this message with the user ID or @mention the user to have them automatically banned when they join this server.",
                           color=discord.Color.blue())
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+    message = await interaction.response.send_message(embed=embed)  # Removed ephemeral=True to make it public
 
+    # Now you need to listen for a reply to this message specifically
     def check(message):
-        return message.reference is not None and \
-               message.reference.message_id == interaction.message.id and \
+        # Ensure the message is a reply to the bot's message
+        return message.reference and message.reference.message_id == message.id and \
                message.author.id == interaction.user.id
 
     try:
         reply = await bot.wait_for('message', check=check, timeout=60.0)
     except asyncio.TimeoutError:
-        await interaction.followup.send("You didn't reply in time!", ephemeral=True)
+        await message.edit(content="You didn't reply in time!", embed=None)
     else:
         # Extract user ID from the reply
         user_id = None
@@ -600,7 +601,7 @@ async def hardban(interaction: discord.Interaction):
             try:
                 user_id = int(reply.content)
             except ValueError:
-                await interaction.followup.send("Invalid user ID provided.", ephemeral=True)
+                await message.edit(content="Invalid user ID provided.", embed=None)
                 return
 
         # Read the current data, update it, and write back to the file
@@ -613,7 +614,8 @@ async def hardban(interaction: discord.Interaction):
             data[guild_id] = [user_id]
 
         write_json(data)
-        await interaction.followup.send(f"User with ID {user_id} has been set for automatic ban on joining.", ephemeral=True)
+        await message.edit(content=f"User with ID {user_id} has been set for automatic ban on joining.", embed=None)
+
 
 
 
