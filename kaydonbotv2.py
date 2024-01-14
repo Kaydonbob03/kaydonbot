@@ -521,11 +521,14 @@ async def purgeuser(interaction: discord.Interaction, channel: discord.TextChann
 @is_admin_or_mod()
 async def announce(interaction: discord.Interaction, channel: discord.TextChannel, message: str):
     try:
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         await channel.send(message)
-        await interaction.followup.send(f"Announcement sent in {channel.mention}.")
+        # Send a confirmation message that only the command user can see
+        await interaction.followup.send(f"Announcement sent in {channel.mention}.", ephemeral=True)
     except Exception as e:
-        await interaction.followup.send(f"Failed to send announcement: {e}")
+        # If there's an error, send an ephemeral message with the error details
+        await interaction.followup.send(f"Failed to send announcement: {e}", ephemeral=True)
+
 
 
 @bot.tree.command(name="addrole", description="Add a role to a member")
