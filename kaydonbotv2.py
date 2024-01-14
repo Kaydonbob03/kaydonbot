@@ -583,7 +583,7 @@ async def hardban(interaction: discord.Interaction):
     embed = discord.Embed(title="HardBan Setup",
                           description="Please reply to this message with the user ID or @mention the user to have them automatically banned when they join this server.",
                           color=discord.Color.blue())
-    initial_response = await interaction.response.send_message(embed=embed)  # No longer ephemeral
+    await interaction.response.send_message(embed=embed)  # No longer ephemeral
 
     def check(message):
         # Ensure the message is in the same channel and by the same user who invoked the command
@@ -593,7 +593,7 @@ async def hardban(interaction: discord.Interaction):
     try:
         reply = await bot.wait_for('message', check=check, timeout=60.0)
     except asyncio.TimeoutError:
-        await initial_response.edit(content="You didn't reply in time!", embed=None)
+        await interaction.followup.send("You didn't reply in time!", ephemeral=True)
     else:
         # Extract user ID from the reply
         user_id = None
@@ -603,7 +603,7 @@ async def hardban(interaction: discord.Interaction):
             try:
                 user_id = int(reply.content)
             except ValueError:
-                await initial_response.edit(content="Invalid user ID provided.", embed=None)
+                await interaction.followup.send("Invalid user ID provided.", ephemeral=True)
                 return
 
         # Read the current data, update it, and write back to the file
@@ -616,11 +616,8 @@ async def hardban(interaction: discord.Interaction):
             data[guild_id] = [user_id]
 
         write_json(data)
-        # Edit the original message to confirm the user has been added to the hardban list
-        confirmation_embed = discord.Embed(title="HardBan Setup",
-                                           description=f"User with ID {user_id} has been set for automatic ban on joining.",
-                                           color=discord.Color.green())
-        await initial_response.edit(embed=confirmation_embed)
+        # Send a new follow-up message to confirm the user has been added to the hardban list
+        await interaction.followup.send(f"User with ID {user_id} has been set for automatic ban on joining.")
 
 
 
