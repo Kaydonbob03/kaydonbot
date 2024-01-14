@@ -7,6 +7,7 @@ import asyncio
 import dateparser
 import datetime
 import re
+import time
 from discord.ext import commands, tasks
 from discord import app_commands
 from openai import OpenAI
@@ -40,6 +41,17 @@ welcome_channels = {}
 # Global dictionary to store temporary configuration data
 temp_config = {}
 
+# Event listener for when the bot is ready
+@bot.event
+async def on_ready():
+    # Sync the command tree globally
+    await bot.tree.sync()
+    global welcome_channels
+    welcome_channels = await load_welcome_channels()
+    print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
+    print('------')
+    change_status.start()
+    
 # Status'
 @tasks.loop(hours=1)  # Change status every hour
 async def change_status():
@@ -54,17 +66,6 @@ async def change_status():
     # Choose a random status and set it
     current_status = random.choice(statuses) 
     await bot.change_presence(activity=current_status)
-
-# Event listener for when the bot is ready
-@bot.event
-async def on_ready():
-    # Sync the command tree globally
-    await bot.tree.sync()
-    global welcome_channels
-    welcome_channels = await load_welcome_channels()
-    print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
-    print('------')
-    change_status.start()
 
 
 @bot.event
