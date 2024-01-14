@@ -6,6 +6,7 @@ import random
 import asyncio
 import dateparser
 import datetime
+import re
 from discord.ext import commands, tasks
 from discord import app_commands
 from openai import OpenAI
@@ -586,39 +587,29 @@ async def hardban(interaction: discord.Interaction):
     embed = discord.Embed(title="HardBan Setup",
                           description="Please reply to this message with the user ID or @mention the user to have them automatically banned when they join this server.",
                           color=discord.Color.blue())
-    bot_message = await interaction.response.send_message(embed=embed)  # Store the bot's message
+    await interaction.response.send_message(embed=embed)
 
     def check(message):
         # Check that the reply is in the same channel and by the user who invoked the command
         return message.channel.id == interaction.channel.id and \
-               message.author.id == interaction.user.id and \
-               (not message.reference or message.reference.message_id == bot_message.id)
+               message.author.id == interaction.user.id
 
     try:
         reply = await bot.wait_for('message', check=check, timeout=60.0)
         
-        # Debugging: Log the reply content and mentions
-        print(f"Reply Content: {reply.content}")
-        print(f"Reply Mentions: {reply.mentions}")
+        # Use regex to find all numbers in the message content, which should correspond to user IDs
+        potential_ids = re.findall(r'\d+', reply.content)
         
-        # Filter out the bot's own ID from the mentions if present
-        valid_mentions = [mention for mention in reply.mentions if mention.id != bot.user.id]
+        # Filter out any numbers that are not 17 to 19 digits long, as Discord IDs are within this range
+        valid_user_ids = [uid for uid in potential_ids if 17 <= len(uid) <= 19]
+
+        if not valid_user_ids:
+            await interaction.followup.send("No valid user ID found. Please make sure you provide a numeric user ID.", ephemeral=True)
+            return
         
-        # Attempt to extract the user ID from the mentions
-        user_id = valid_mentions[0].id if valid_mentions else None
+        # For this example, we'll just use the first valid ID found
+        user_id = int(valid_user_ids[0])
         
-        # If no valid user ID is found in the mentions, attempt to use the content of the message
-        if user_id is None:
-            try:
-                user_id = int(reply.content)
-            except ValueError:
-                # Send a message if the content is also not a valid ID
-                await interaction.followup.send("Invalid user ID provided. Please ensure you are mentioning a user or providing a numeric user ID.", ephemeral=True)
-                return
-        
-        print(f"User ID received: {user_id}")  # Debug print
-        
-        # Rest of your logic...
         # Read the current data, update it, and write back to the file
         data = read_hardban()
         guild_id = str(interaction.guild_id)
@@ -636,8 +627,7 @@ async def hardban(interaction: discord.Interaction):
     except asyncio.TimeoutError:
         await interaction.followup.send("You didn't reply in time!", ephemeral=True)
     except ValueError:
-        # If the conversion fails, the user likely did not provide a valid user ID
-        await interaction.followup.send("You must provide a valid user ID or mention.", ephemeral=True)
+        await interaction.followup.send("An unexpected error occurred while processing the user ID.", ephemeral=True)
     except Exception as e:
         print(f"An error occurred: {e}")  # Debug print
         await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
