@@ -853,13 +853,26 @@ async def joke(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve a joke: {e}")
 
-# Path to the JSON file
+# Path to the JSON file for screams
 scream_json = 'random_scream.json'
+
+# Path to the JSON file for blacklist
+wordblacklist_json = 'complete_words_blacklist.json'
 
 # Function to read data from the JSON file
 def read_screams():
     with open(scream_json, 'r') as file:
         return json.load(file)['screams']
+
+# Function to read the blacklist from the JSON file
+def read_blacklist():
+    with open(wordblacklist_json, 'r') as file:
+        return json.load(file)['blacklist']
+
+# Function to write data to the JSON file
+def write_screams(screams):
+    with open(scream_json, 'w') as file:
+        json.dump({'screams': screams}, file, indent=4)
 
 @bot.tree.command(name="scream", description="Let out a random scream")
 async def scream(interaction: discord.Interaction):
@@ -867,26 +880,32 @@ async def scream(interaction: discord.Interaction):
     random_scream = random.choice(screams)
     await interaction.response.send_message(f"# {random_scream}")
 
-
-# Function to write data to the JSON file
-def write_screams(screams):
-    with open(scream_json, 'w') as file:
-        json.dump({'screams': screams}, file, indent=4)
-
 @bot.tree.command(name="screamedit", description="Adds a scream to the list if it's not already there")
 async def screamedit(interaction: discord.Interaction, scream: str):
+    # Remove any '#' characters and trim whitespace
+    scream_sanitized = re.sub(r'#', '', scream).strip().lower()
+
+    # Read the blacklist
+    blacklist = read_blacklist()
+
+    # Check if the sanitized scream contains any blacklisted substrings
+    if any(blacklisted_word in scream_sanitized for blacklisted_word in blacklist):
+        await interaction.response.send_message("Your scream contains inappropriate content. Please try again without using offensive language.", ephemeral=True)
+        return
+
     # Read the current list of screams
     screams = read_screams()
-    
+
     # Check if the scream is already in the list
-    if scream in screams:
-        await interaction.response.send_message(f"That scream is already in the list!", ephemeral=True)
-    else:
-        # Add the new scream to the list and write back to the JSON file
-        screams.append(scream)
-        write_screams(screams)
-        
-        await interaction.response.send_message(f"New scream added to the list: {scream}", ephemeral=True)
+    if scream_sanitized in screams:
+        await interaction.response.send_message("That scream is already in the list!", ephemeral=True)
+        return
+
+    # Add the new scream to the list and write back to the JSON file
+    screams.append(scream_sanitized)
+    write_screams(screams)
+
+    await interaction.response.send_message(f"New scream added to the list: {scream_sanitized}", ephemeral=True)
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
