@@ -569,14 +569,14 @@ hardban_json = 'hardban_list.json'
 
 # Function to read data from the JSON file
 def read_hardban():
-    if not os.path.exists(hardban_json):
+    if not os.path.exists('hardban_list.json'):
         return {}
-    with open(hardban_json, 'r') as file:
+    with open('hardban_list.json', 'r') as file:
         return json.load(file)
 
 # Function to write data to the JSON file
 def write_json(data):
-    with open(hardban_json, 'w') as file:
+    with open('hardban_list.json', 'w') as file:
         json.dump(data, file, indent=4)
 
 @bot.tree.command(name="hardban", description="Set up automatic ban for specified users when they join the server")
@@ -589,29 +589,40 @@ async def hardban(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
     def check(message):
+        # Ensures that the message is a direct response to the bot's message
         return message.channel.id == interaction.channel.id and \
                message.author.id == interaction.user.id
 
     try:
         reply = await bot.wait_for('message', check=check, timeout=60.0)
+        
+        # Debugging: Log the reply content and mentions
+        print(f"Reply Content: {reply.content}")
+        print(f"Reply Mentions: {reply.mentions}")
+        
         # Extract user ID from the reply
-        user_id = reply.mentions[0].id if reply.mentions else reply.content
+        user_id = reply.mentions[0].id if reply.mentions else int(reply.content.strip())
         print(f"User ID received: {user_id}")  # Debug print
 
         # Read the current data, update it, and write back to the file
         data = read_hardban()
         guild_id = str(interaction.guild_id)
-        data.setdefault(guild_id, []).append(user_id)  # Add user ID to the list for the guild
-        print(f"Updated data to write: {data}")  # Debug print
-
-        write_json(data)
-        await interaction.followup.send(f"User with ID {user_id} has been set for automatic ban on joining.")
+        # Add user ID to the list for the guild if not already present
+        if user_id not in data.get(guild_id, []):
+            data.setdefault(guild_id, []).append(user_id)
+            write_json(data)
+            await interaction.followup.send(f"User with ID {user_id} has been set for automatic ban on joining.")
+        else:
+            await interaction.followup.send(f"User with ID {user_id} is already on the hardban list.", ephemeral=True)
+        
     except asyncio.TimeoutError:
         await interaction.followup.send("You didn't reply in time!", ephemeral=True)
+    except ValueError:
+        # If the conversion fails, the user likely did not provide a valid user ID
+        await interaction.followup.send("You must provide a valid user ID or mention.", ephemeral=True)
     except Exception as e:
-        print(f"Error: {e}")  # Debug print
+        print(f"An error occurred: {e}")  # Debug print
         await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
-
 
 
 
