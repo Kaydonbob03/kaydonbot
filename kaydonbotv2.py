@@ -180,6 +180,7 @@ def get_mod_commands_embed():
     embed.add_field(name="/announce [channel] [message]", value="Send an announcement", inline=False)
     embed.add_field(name="/addrole [member] [role]", value="Add a role to a member", inline=False)
     embed.add_field(name="/removerole [member] [role]", value="Remove a role from a member", inline=False)
+    embed.add_field(name="/hardban", value="initiates a setup to add a userid to autoban a user on join to the server", inline=False)
     embed.set_footer(text="Page 3/4")
     return embed
 
