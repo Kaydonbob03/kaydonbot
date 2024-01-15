@@ -22,7 +22,7 @@ To add KaydonBotV2 to your Discord server, follow these steps:
 
 ### Support Server
 
-If you need assistance or have any questions about KaydonBotV2, feel free to my server! It was originally just my server for content creation, but I am going to include my development stuff there as well until my bot or any development stuff gets bug enough to require its own server. The channels for development things can be accessed without requiring to verify subscription to my youtube channel and stuff :). You can join here: [Kaydonbob03 Server](https://discord.com/invite/qbVJ6G2)
+If you need assistance or have any questions about KaydonBotV2, feel free to join my server! It was originally just my server for content creation, but I am going to include my development stuff there as well until my bot or any development stuff gets bug enough to require its own server. The channels for development things can be accessed without requiring to verify subscription to my youtube channel and stuff :). You can join here: [Kaydonbob03 Server](https://discord.com/invite/qbVJ6G2)
 
 ## Working With The Code
 
