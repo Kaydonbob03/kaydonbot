@@ -13,6 +13,22 @@ from discord import app_commands
 from openai import OpenAI
 
 
+"""                 Copyright (C) 2024 Kayden Cormier
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>."""
+
+
 # =======================================================================================================================================
 # ==========================================================={BOT STARTS HERE}===========================================================
 # =======================================================================================================================================
@@ -48,6 +64,7 @@ async def on_ready():
     await bot.tree.sync()
     global welcome_channels
     welcome_channels = await load_welcome_channels()
+    print('Kaydonbot  Copyright (C) 2024  Kayden Cormier -- K-GamesMedia')
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
     change_status.start()
@@ -900,7 +917,7 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     screams = read_screams()
 
     # Check if the scream is already in the list
-    if scream_sanitized in screams:
+    if scream_sanitized in screams: 
         await interaction.response.send_message("That scream is already in the list!", ephemeral=True)
         return
 
@@ -909,6 +926,12 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     write_screams(screams)
 
     await interaction.response.send_message(f"New scream added to the list: {scream_sanitized}", ephemeral=True)
+
+
+
+@bot.tree.command(name="who?", description="Secret Command to WHOMEGALUL someonw")
+async def scream(interaction: discord.Interaction):
+    await interaction.response.send_message(f"# WH<:OMEGALUL:1165130819275346012>")
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
