@@ -385,6 +385,7 @@ async def on_message(message):
 
             # Clear temporary configuration data
             del temp_config[guild_id]
+            
 
 
 #****************************WELCOME MESSAGE ENDS****************************
@@ -928,10 +929,21 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     await interaction.response.send_message(f"New scream added to the list: {scream_sanitized}", ephemeral=True)
 
 
+# global dictionary for keeping track of 
+to_reply = {}
 
-@bot.tree.command(name="who?", description="Secret Command to WHOMEGALUL someonw")
-async def scream(interaction: discord.Interaction):
-    await interaction.response.send_message(f"# WH<:OMEGALUL:1165130819275346012>")
+# Funny secret command
+@bot.tree.command(name="omega", description="Secret Command to WHOMEGALUL someone")
+async def scream(interaction: discord.Interaction, user: discord.User):
+    to_reply[user.id] = True
+    await interaction.response.send_message(f"Will reply to {user.mention} next time they send a message.")
+
+@bot.event
+async def on_message(message):
+    if message.author.id in to_reply:
+        await message.channel.send(f"# WH<:OMEGALUL:1165130819275346012>")
+        del to_reply[message.author.id]
+    await bot.process_commands(message)
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
