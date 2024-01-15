@@ -882,14 +882,17 @@ async def scream(interaction: discord.Interaction):
 
 @bot.tree.command(name="screamedit", description="Adds a scream to the list if it's not already there")
 async def screamedit(interaction: discord.Interaction, scream: str):
-    # Remove any '#' characters and trim whitespace
-    scream_sanitized = re.sub(r'#', '', scream).strip().lower()
+    # Remove any '#' characters, trim whitespace, and convert to uppercase
+    scream_sanitized = re.sub(r'#', '', scream).strip().upper()
 
     # Read the blacklist
     blacklist = read_blacklist()
 
-    # Check if the sanitized scream contains any blacklisted substrings
-    if any(blacklisted_word in scream_sanitized for blacklisted_word in blacklist):
+    # Convert the scream to lowercase for blacklist checking
+    scream_for_blacklist_check = scream_sanitized.lower()
+
+    # Check if the scream for blacklist check contains any blacklisted substrings
+    if any(blacklisted_word in scream_for_blacklist_check for blacklisted_word in blacklist):
         await interaction.response.send_message("Your scream contains inappropriate content. Please try again without using offensive language.", ephemeral=True)
         return
 
