@@ -900,6 +900,14 @@ async def scream(interaction: discord.Interaction):
 
 @bot.tree.command(name="screamedit", description="Adds a scream to the list if it's not already there")
 async def screamedit(interaction: discord.Interaction, scream: str):
+    # Regex to remove repeated characters (more than 2 of the same character in a row)
+    scream_no_repeats = re.sub(r'(.)\1{2,}', r'\1', scream)
+
+    # Regex to block URLs
+    if re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', scream_no_repeats):
+        await interaction.response.send_message("Links are not allowed in screams. Please try again.", ephemeral=True)
+        return
+    
     # Remove any '#' characters, trim whitespace, and convert to uppercase
     scream_sanitized = re.sub(r'#', '', scream).strip().upper()
 
@@ -936,7 +944,7 @@ to_reply = {}
 @bot.tree.command(name="omega", description="Secret Command to WHOMEGALUL someone")
 async def scream(interaction: discord.Interaction, user: discord.User):
     to_reply[user.id] = True
-    await interaction.response.send_message(f"Will reply to {user.mention} next time they send a message.")
+    await interaction.response.send_message(f"Will reply to {user.mention} next time they send a message.", ephemeral=True)
 
 @bot.event
 async def on_message(message):
