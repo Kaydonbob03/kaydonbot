@@ -13,6 +13,22 @@ from discord import app_commands
 from openai import OpenAI
 
 
+"""                 Copyright (C) 2024 Kayden Cormier
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>."""
+
+
 # =======================================================================================================================================
 # ==========================================================={BOT STARTS HERE}===========================================================
 # =======================================================================================================================================
@@ -48,6 +64,7 @@ async def on_ready():
     await bot.tree.sync()
     global welcome_channels
     welcome_channels = await load_welcome_channels()
+    print('Kaydonbot  Copyright (C) 2024  Kayden Cormier -- K-GamesMedia')
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
     change_status.start()
@@ -368,6 +385,7 @@ async def on_message(message):
 
             # Clear temporary configuration data
             del temp_config[guild_id]
+            
 
 
 #****************************WELCOME MESSAGE ENDS****************************
@@ -882,6 +900,14 @@ async def scream(interaction: discord.Interaction):
 
 @bot.tree.command(name="screamedit", description="Adds a scream to the list if it's not already there")
 async def screamedit(interaction: discord.Interaction, scream: str):
+    # Regex to remove repeated characters (more than 2 of the same character in a row)
+    scream_no_repeats = re.sub(r'(.)\1{2,}', r'\1', scream)
+
+    # Regex to block URLs
+    if re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', scream_no_repeats):
+        await interaction.response.send_message("Links are not allowed in screams. Please try again.", ephemeral=True)
+        return
+    
     # Remove any '#' characters, trim whitespace, and convert to uppercase
     scream_sanitized = re.sub(r'#', '', scream).strip().upper()
 
@@ -900,7 +926,7 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     screams = read_screams()
 
     # Check if the scream is already in the list
-    if scream_sanitized in screams:
+    if scream_sanitized in screams: 
         await interaction.response.send_message("That scream is already in the list!", ephemeral=True)
         return
 
@@ -909,6 +935,23 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     write_screams(screams)
 
     await interaction.response.send_message(f"New scream added to the list: {scream_sanitized}", ephemeral=True)
+
+
+# global dictionary for keeping track of 
+to_reply = {}
+
+# Funny secret command
+@bot.tree.command(name="omega", description="Secret Command to WHOMEGALUL someone")
+async def scream(interaction: discord.Interaction, user: discord.User):
+    to_reply[user.id] = True
+    await interaction.response.send_message(f"Will reply to {user.mention} next time they send a message.", ephemeral=True)
+
+@bot.event
+async def on_message(message):
+    if message.author.id in to_reply:
+        await message.channel.send(f"# WH<:OMEGALUL:1165130819275346012>")
+        del to_reply[message.author.id]
+    await bot.process_commands(message)
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------

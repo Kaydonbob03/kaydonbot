@@ -1,6 +1,6 @@
-# Kaydonbotv2 Discord Bot
+# Kaydonbot Discord Bot
 
-KaydonBotV2 is a Discord bot designed to enhance the functionality and interactivity of Discord servers. It integrates features like greeting new members, responding to user prompts using GPT-4-turbo, and generating images with DALL-E 3. It also has a wide assortment of moderation commands and botgames!
+KaydonBot is a Discord bot designed to enhance the functionality and interactivity of Discord servers. It integrates features like greeting new members, responding to user prompts using GPT-4-turbo, and generating images with DALL-E 3. It also has a wide assortment of moderation commands and botgames!
 
 ## Features
 
@@ -12,9 +12,9 @@ KaydonBotV2 is a Discord bot designed to enhance the functionality and interacti
 
 ### Adding the Bot to Your Server
 
-To add KaydonBotV2 to your Discord server, follow these steps:
+To add KaydonBot to your Discord server, follow these steps:
 
-1. **Navigate to the Discord Authorization URL**: [Add KaydonBotV2 to Discord](https://discord.com/api/oauth2/authorize?client_id=1181143854959837184&permissions=8&scope=bot+applications.commands)
+1. **Navigate to the Discord Authorization URL**: [Add KaydonBot to Discord](https://discord.com/api/oauth2/authorize?client_id=1181143854959837184&permissions=8&scope=bot+applications.commands)
 2. **Select Your Server**: Choose the server where you want to add the bot.
 3. **Grant Required Permissions**: Make sure to grant all necessary permissions for the bot to function correctly.
 
@@ -22,7 +22,7 @@ To add KaydonBotV2 to your Discord server, follow these steps:
 
 ### Support Server
 
-If you need assistance or have any questions about KaydonBotV2, feel free to my server! It was originally just my server for content creation, but I am going to include my development stuff there as well until my bot or any development stuff gets bug enough to require its own server. The channels for development things can be accessed without requiring to verify subscription to my youtube channel and stuff :). You can join here: [Kaydonbob03 Server](https://discord.com/invite/qbVJ6G2)
+If you need assistance or have any questions about KaydonBotV2, feel free to join my server! It was originally just my server for content creation, but I am going to include my development stuff there as well until my bot or any development stuff gets bug enough to require its own server. The channels for development things can be accessed without requiring to verify subscription to my youtube channel and stuff :). You can join here: [Kaydonbob03 Server](https://discord.com/invite/qbVJ6G2)
 
 ## Working With The Code
 
@@ -61,7 +61,7 @@ python kaydonbotv2.py
 
 ### Contributing
 
-Contributions to KaydonBotV2 are welcome! Please feel free to submit pull requests or open issues to discuss proposed changes or report bugs.
+Contributions to KaydonBot are welcome! Please feel free to submit pull requests or open issues to discuss proposed changes or report bugs.
 
 ## License
 
