@@ -8,6 +8,7 @@ import dateparser
 import datetime
 import re
 import time
+from langdetect import detect, LangDetectException
 from discord.ext import commands, tasks
 from discord import app_commands
 from openai import OpenAI
@@ -909,16 +910,28 @@ async def screamedit(interaction: discord.Interaction, scream: str):
         return
     
     # Remove any '#' characters, trim whitespace, and convert to uppercase
-    scream_sanitized = re.sub(r'#', '', scream).strip().upper()
+    scream_sanitized = re.sub(r'#', '', scream_no_repeats).strip().upper()
+
+    # Attempt to detect the language of the scream
+    try:
+        if detect(scream_sanitized) != 'en':
+            await interaction.response.send_message("Only English screams are allowed. Please try again.", ephemeral=True)
+            return
+    except LangDetectException:
+        await interaction.response.send_message("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
+        return
+
+    # Regular expression pattern for matching variations of 'nword' with whitespace in between letters
+    nword_pattern = re.compile(r'n\s*w\s*o\s*r\s*d', re.IGNORECASE)
+
+    # Remove all whitespace from the scream for the purpose of blacklist checking
+    scream_for_blacklist_check = re.sub(r'\s+', '', scream_sanitized).lower()
 
     # Read the blacklist
     blacklist = read_blacklist()
 
-    # Convert the scream to lowercase for blacklist checking
-    scream_for_blacklist_check = scream_sanitized.lower()
-
-    # Check if the scream for blacklist check contains any blacklisted substrings
-    if any(blacklisted_word in scream_for_blacklist_check for blacklisted_word in blacklist):
+    # Check if the scream for blacklist check contains any blacklisted substrings or the nword pattern
+    if any(blacklisted_word in scream_for_blacklist_check for blacklisted_word in blacklist) or nword_pattern.search(scream_for_blacklist_check):
         await interaction.response.send_message("Your scream contains inappropriate content. Please try again without using offensive language.", ephemeral=True)
         return
 
