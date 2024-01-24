@@ -69,6 +69,7 @@ async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
     change_status.start()
+    print('------')
     
 # Status'
 @tasks.loop(hours=1)  # Change status every hour
