@@ -900,14 +900,20 @@ async def scream(interaction: discord.Interaction):
     random_scream = random.choice(screams)
     await interaction.response.send_message(f"# {random_scream}")
 
+import re
+from langdetect import detect, LangDetectException
+
 @bot.tree.command(name="screamedit", description="Adds a scream to the list if it's not already there")
 async def screamedit(interaction: discord.Interaction, scream: str):
+    # Acknowledge the interaction immediately but indicate that you're still working on it
+    await interaction.response.defer(ephemeral=True)
+
     # Regex to remove repeated characters (more than 2 of the same character in a row)
     scream_no_repeats = re.sub(r'(.)\1{2,}', r'\1', scream)
 
     # Regex to block URLs
     if re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', scream_no_repeats):
-        await interaction.response.send_message("Links are not allowed in screams. Please try again.", ephemeral=True)
+        await interaction.followup.send("Links are not allowed in screams. Please try again.", ephemeral=True)
         return
     
     # Remove any '#' characters, trim whitespace, and convert to uppercase
@@ -916,10 +922,10 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     # Attempt to detect the language of the scream
     try:
         if detect(scream_sanitized) != 'en':
-            await interaction.response.send_message("Only English screams are allowed. Please try again.", ephemeral=True)
+            await interaction.followup.send("Only English screams are allowed. Please try again.", ephemeral=True)
             return
     except LangDetectException:
-        await interaction.response.send_message("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
+        await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
         return
 
     # Regular expression pattern for matching variations of 'nword' with whitespace in between letters
@@ -933,7 +939,7 @@ async def screamedit(interaction: discord.Interaction, scream: str):
 
     # Check if the scream for blacklist check contains any blacklisted substrings or the nword pattern
     if any(blacklisted_word in scream_for_blacklist_check for blacklisted_word in blacklist) or nword_pattern.search(scream_for_blacklist_check):
-        await interaction.response.send_message("Your scream contains inappropriate content. Please try again without using offensive language.", ephemeral=True)
+        await interaction.followup.send("Your scream contains inappropriate content. Please try again without using offensive language.", ephemeral=True)
         return
 
     # Read the current list of screams
@@ -941,14 +947,16 @@ async def screamedit(interaction: discord.Interaction, scream: str):
 
     # Check if the scream is already in the list
     if scream_sanitized in screams: 
-        await interaction.response.send_message("That scream is already in the list!", ephemeral=True)
+        await interaction.followup.send("That scream is already in the list!", ephemeral=True)
         return
 
     # Add the new scream to the list and write back to the JSON file
     screams.append(scream_sanitized)
     write_screams(screams)
 
-    await interaction.response.send_message(f"New scream added to the list: {scream_sanitized}", ephemeral=True)
+    # Send the final response
+    await interaction.followup.send(f"New scream added to the list: {scream_sanitized}", ephemeral=True)
+
 
 
 # global dictionary for keeping track of 
