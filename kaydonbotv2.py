@@ -912,9 +912,6 @@ async def scream(interaction: discord.Interaction):
     random_scream = random.choice(screams)
     await interaction.response.send_message(f"# {random_scream}")
 
-import re
-from langdetect import detect, LangDetectException
-
 @bot.tree.command(name="screamedit", description="Adds a scream to the list if it's not already there")
 async def screamedit(interaction: discord.Interaction, scream: str):
     # Acknowledge the interaction immediately but indicate that you're still working on it
