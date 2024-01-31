@@ -917,16 +917,13 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     # Acknowledge the interaction immediately but indicate that you're still working on it
     await interaction.response.defer(ephemeral=True)
 
-    # Regex to remove repeated characters (more than 2 of the same character in a row)
-    scream_no_repeats = re.sub(r'(.)\1{2,}', r'\1', scream)
-
     # Regex to block URLs
-    if re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', scream_no_repeats):
+    if re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', scream):
         await interaction.followup.send("Links are not allowed in screams. Please try again.", ephemeral=True)
         return
     
     # Remove any '#' characters, trim whitespace, and convert to uppercase
-    scream_sanitized = re.sub(r'#', '', scream_no_repeats).strip().upper()
+    scream_sanitized = re.sub(r'#', '', scream).strip().upper()
 
     # Attempt to detect the language of the scream
     try:
@@ -942,6 +939,9 @@ async def screamedit(interaction: discord.Interaction, scream: str):
 
     # Remove all whitespace from the scream for the purpose of blacklist checking
     scream_for_blacklist_check = re.sub(r'\s+', '', scream_sanitized).lower()
+
+    # Regex to remove repeated characters (more than 2 of the same character in a row) for blacklist checking
+    scream_for_blacklist_check = re.sub(r'(.)\1{2,}', r'\1', scream_for_blacklist_check)
 
     # Read the blacklist
     blacklist = read_blacklist()
@@ -993,7 +993,7 @@ async def sourcecode(interaction: discord.Interaction):
     await interaction.response.defer()
     embed = discord.Embed(title="Source Code", description="Get the source code for this bot", 
                   url="https://github.com/Kaydonbob03/kaydonbotv2", color=0x5CDBF0)
-    await interaction.edit_original_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
