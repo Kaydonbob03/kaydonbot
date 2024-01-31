@@ -236,10 +236,9 @@ def get_suggestions_commands_embed():
 def get_dev_commands_embed():
     embed = discord.Embed(
         title="Kaydonbot Dev Tools Commands",
-        description="Commands available for moderators and administrators.",
+        description="Commands for use by developers",
         color=discord.Color.green()
     )
-    # Add fields for each moderator command
     embed.add_field(name="/sourcecode", value="returns the github repository", inline=False)
     embed.set_footer(text="Page 5/5")
     return embed
@@ -925,14 +924,14 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     # Remove any '#' characters, trim whitespace, and convert to uppercase
     scream_sanitized = re.sub(r'#', '', scream).strip().upper()
 
-    # Attempt to detect the language of the scream
-    try:
-        if detect(scream_sanitized) != 'en':
-            await interaction.followup.send("Only English screams are allowed. Please try again.", ephemeral=True)
-            return
-    except LangDetectException:
-        await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
-        return
+    # # Attempt to detect the language of the scream
+    # try:
+    #     if detect(scream_sanitized) != 'en':
+    #         await interaction.followup.send("Only English screams are allowed. Please try again.", ephemeral=True)
+    #         return
+    # except LangDetectException:
+    #     await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
+    #     return
 
     # Regular expression pattern for matching variations of the nword with whitespace in between letters
     nword_pattern = re.compile(r'n\s*i\s*g\s*g\s*e\s*r', re.IGNORECASE)
