@@ -991,11 +991,12 @@ async def on_message(message):
 # -------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------DEV COMMANDS---------------------------------------------------------
     
-# Return Github Repo 
 @bot.tree.command(name="sourcecode", description="Get the source code for this bot")
 async def sourcecode(interaction: discord.Interaction):
+    await interaction.response.defer()
     embed = discord.Embed(title="Source Code", description="Get the source code for this bot", 
                   url="https://github.com/Kaydonbob03/kaydonbotv2", color=0x5CDBF0)
+    await interaction.edit_original_message(embed=embed)
 
 
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
