@@ -937,8 +937,8 @@ async def screamedit(interaction: discord.Interaction, scream: str):
         await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
         return
 
-    # Regular expression pattern for matching variations of 'nword' with whitespace in between letters
-    nword_pattern = re.compile(r'n\s*w\s*o\s*r\s*d', re.IGNORECASE)
+    # Regular expression pattern for matching variations of the nword with whitespace in between letters
+    nword_pattern = re.compile(r'n\s*i\s*g\s*g\s*e\s*r', re.IGNORECASE)
 
     # Remove all whitespace from the scream for the purpose of blacklist checking
     scream_for_blacklist_check = re.sub(r'\s+', '', scream_sanitized).lower()
