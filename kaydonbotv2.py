@@ -925,14 +925,14 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     # Remove any '#' characters, trim whitespace, and convert to uppercase
     scream_sanitized = re.sub(r'#', '', scream).strip().upper()
 
-    # Attempt to detect the language of the scream
-    try:
-        if detect(scream_sanitized) != 'en':
-            await interaction.followup.send("Only English screams are allowed. Please try again.", ephemeral=True)
-            return
-    except LangDetectException:
-        await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
-        return
+    # # Attempt to detect the language of the scream
+    # try:
+    #     if detect(scream_sanitized) != 'en':
+    #         await interaction.followup.send("Only English screams are allowed. Please try again.", ephemeral=True)
+    #         return
+    # except LangDetectException:
+    #     await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
+    #     return
 
     # Regular expression pattern for matching variations of the nword with whitespace in between letters
     nword_pattern = re.compile(r'n\s*i\s*g\s*g\s*e\s*r', re.IGNORECASE)
