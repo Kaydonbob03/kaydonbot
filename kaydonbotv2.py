@@ -8,6 +8,7 @@ import dateparser
 import datetime
 import re
 import time
+import aiohttp
 from langdetect import detect, LangDetectException
 from discord.ext import commands, tasks
 from discord import app_commands
@@ -924,14 +925,14 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     # Remove any '#' characters, trim whitespace, and convert to uppercase
     scream_sanitized = re.sub(r'#', '', scream).strip().upper()
 
-    # # Attempt to detect the language of the scream
-    # try:
-    #     if detect(scream_sanitized) != 'en':
-    #         await interaction.followup.send("Only English screams are allowed. Please try again.", ephemeral=True)
-    #         return
-    # except LangDetectException:
-    #     await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
-    #     return
+    # Attempt to detect the language of the scream
+    try:
+        if detect(scream_sanitized) != 'en':
+            await interaction.followup.send("Only English screams are allowed. Please try again.", ephemeral=True)
+            return
+    except LangDetectException:
+        await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
+        return
 
     # Regular expression pattern for matching variations of the nword with whitespace in between letters
     nword_pattern = re.compile(r'n\s*i\s*g\s*g\s*e\s*r', re.IGNORECASE)
@@ -982,6 +983,28 @@ async def on_message(message):
         await message.channel.send(f"# WH<:OMEGALUL:1165130819275346012>")
         del to_reply[message.author.id]
     await bot.process_commands(message)
+
+@bot.tree.command(name="urban", description="Search Urban Dictionary")
+async def urban(interaction: discord.Interaction, term: str):
+    await interaction.response.defer(ephemeral=True)
+
+    url = f"http://api.urbandictionary.com/v0/define?term={term}"
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data['list']:
+                        definition = data['list'][0]['definition']
+                        await interaction.followup.send(definition[:2000])  # Trim message to fit Discord limit
+                    else:
+                        await interaction.followup.send("No definition found for the term.")
+                else:
+                    await interaction.followup.send("Failed to fetch data from Urban Dictionary.")
+        except aiohttp.ClientError as e:
+            print(f"Failed to fetch Urban Dictionary data: {e}")
+            await interaction.followup.send("Encountered an error while fetching data.")
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
