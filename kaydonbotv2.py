@@ -986,7 +986,7 @@ async def on_message(message):
 
 @bot.tree.command(name="urban", description="Search Urban Dictionary")
 async def urban(interaction: discord.Interaction, term: str):
-    await interaction.response.defer(ephemeral=True)
+    await interaction.response.defer()
 
     url = f"http://api.urbandictionary.com/v0/define?term={term}"
 
