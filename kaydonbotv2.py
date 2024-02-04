@@ -183,7 +183,7 @@ def get_general_commands_embed():
     embed.add_field(name="/random [choices]", value="Make a random choice", inline=False)
     embed.add_field(name="/scream", value="Bot will scream randomly from a list screams", inline=False)
     embed.add_field(name="/screamedit [scream]", value="adds a scream to the list if its not already there", inline=False)
-    embed.set_footer(text="Page 1/5")
+    embed.set_footer(text="Page 1/6")
     return embed
 
 def get_mod_commands_embed():
@@ -205,7 +205,7 @@ def get_mod_commands_embed():
     embed.add_field(name="/addrole [member] [role]", value="Add a role to a member", inline=False)
     embed.add_field(name="/removerole [member] [role]", value="Remove a role from a member", inline=False)
     embed.add_field(name="/hardban", value="initiates a setup to add a userid to autoban a user on join to the server", inline=False)
-    embed.set_footer(text="Page 3/5")
+    embed.set_footer(text="Page 3/6")
     return embed
 
 def get_bot_games_commands_embed():
@@ -219,7 +219,7 @@ def get_bot_games_commands_embed():
     embed.add_field(name="/wouldyourather", value="Play a round of Would You Rather", inline=False)
     embed.add_field(name="/truthordare", value="Play a fun little Truth or Dare game", inline=False)
     # Add more bot game commands here
-    embed.set_footer(text="Page 2/5")
+    embed.set_footer(text="Page 2/6")
     return embed
 
 def get_suggestions_commands_embed():
@@ -231,17 +231,29 @@ def get_suggestions_commands_embed():
     embed.add_field(name="/cmdsuggestion [Suggestion]", value="Suggest a new command.", inline=False)
     embed.add_field(name="/tdsuggestion [option] {truth/dare} [suggestion]", value="Suggest a SFW Truth or Dare.", inline=False)
     embed.add_field(name="/wyrsuggestion [suggestion]", value="Suggest a 'Would You Rather' question.", inline=False)
-    embed.set_footer(text="Page 4/5")
+    embed.set_footer(text="Page 6/6")
     return embed
 
 def get_dev_commands_embed():
     embed = discord.Embed(
         title="Kaydonbot Dev Tools Commands",
         description="Commands for use by developers",
-        color=discord.Color.green()
+        color=discord.Color.brown()
     )
     embed.add_field(name="/sourcecode", value="returns the github repository", inline=False)
-    embed.set_footer(text="Page 5/5")
+    embed.set_footer(text="Page 5/6")
+    return embed
+
+def get_fn_commands_embed():
+    embed = discord.Embed(
+        title="Kaydonbot Fortnite Commands",
+        description="Commands for Fortnite related content",
+        color=discord.Color.gold()
+    )
+    embed.add_field(name="/fnshopcurrent", value="Returns the current item shop", inline=False)
+    embed.add_field(name="/fnshopseen [itemname]", value="Retutns information on the item, specifically its last seen info", inline=False)
+    embed.add_field(name="/fnshopupcoming", value="Retuns the upcoming item shop", inline=False)
+    embed.set_footer(text="Page 4/6")
     return embed
 
 @bot.event
@@ -251,8 +263,9 @@ async def on_reaction_add(reaction, user):
             get_general_commands_embed(), 
             get_bot_games_commands_embed(), 
             get_mod_commands_embed(),
-            get_suggestions_commands_embed(),
-            get_dev_commands_embed()
+            get_fn_commands_embed(),
+            get_dev_commands_embed(),
+            get_suggestions_commands_embed()
         ]
         current_page = int(reaction.message.embeds[0].footer.text.split('/')[0][-1]) - 1
 
