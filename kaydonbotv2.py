@@ -1084,7 +1084,7 @@ async def fnshopcurrent(interaction: discord.Interaction):
 
 @bot.tree.command(name="fnshopseen", description="Shows the last time an item was seen in the Fortnite item shop")
 async def fnshopseen(interaction: discord.Interaction, itemname: str):
-    await interaction.response.defer(ephemeral=True)
+    await interaction.response.defer()
 
     api_url = f"https://fnbr.co/api/images?search={itemname}"
     headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
@@ -1123,7 +1123,7 @@ async def fnshopseen(interaction: discord.Interaction, itemname: str):
 
 @bot.tree.command(name="fnshopupcoming", description="Displays upcoming items in the Fortnite item shop")
 async def fnshopupcoming(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
+    await interaction.response.defer()
 
     api_url = "https://fnbr.co/api/upcoming"
     headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
