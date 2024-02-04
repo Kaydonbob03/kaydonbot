@@ -989,7 +989,6 @@ async def urban(interaction: discord.Interaction, term: str):
     await interaction.response.defer()
 
     url = f"http://api.urbandictionary.com/v0/define?term={term}"
-
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get(url) as response:
@@ -1020,7 +1019,150 @@ async def sourcecode(interaction: discord.Interaction):
 
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------FNBR COMMANDS--------------------------------------------------------
+    
+@bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
+async def fnshopcurrent(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=False)
+
+    api_url = "https://fnbr.co/api/shop"
+    headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(api_url, headers=headers) as response:
+                if response.status == 200:
+                    try:
+                        data = await response.json()
+                    except Exception as e:
+                        await interaction.followup.send("Failed to parse the response from the server. Please try again later.")
+                        return
+
+                    shop_data = data.get('data', {})
+                    date = shop_data.get('date', 'Unknown date')
+
+                    embed = discord.Embed(title="Fortnite Item Shop", description=f"Shop for {date}", color=discord.Color.blue())
+                    for section in shop_data.get('sections', []):
+                        section_name = section.get('displayName', 'Unknown Section')
+                        items = section.get('items', [])
+                        for item_id in items:
+                            item_response = await session.get(f"https://fnbr.co/api/images/{item_id}", headers=headers)
+                            if item_response.status == 200:
+                                try:
+                                    item_data = await item_response.json()
+                                except Exception as e:
+                                    await interaction.followup.send("Failed to parse the item data from the server. Please try again later.")
+                                    return
+
+                                for item in item_data.get('data', []):
+                                    name = item.get('name', 'Unknown Item')
+                                    icon_url = item.get('images', {}).get('icon', '')
+                                    embed.add_field(name=name, value="\u200b", inline=True)
+                                    if icon_url:
+                                        embed.set_image(url=icon_url)
+                                        break  # Assuming you want to add just one image per section to the embed.
+
+                    await interaction.followup.send(embed=embed)
+
+                else:
+                    await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
+        except aiohttp.ClientError as e:
+            await interaction.followup.send("An error occurred while trying to fetch the item shop. Please try again later.")
+
+@bot.tree.command(name="fnshopseen", description="Shows the last time an item was seen in the Fortnite item shop")
+async def fnshopseen(interaction: discord.Interaction, itemname: str):
+    await interaction.response.defer(ephemeral=True)
+
+    api_url = f"https://fnbr.co/api/images?search={itemname}"
+    headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(api_url, headers=headers) as response:
+                if response.status != 200:
+                    await interaction.followup.send("Failed to fetch data from the FNBR API. Please try again later.")
+                    return
+                
+                data = await response.json()
+                if data['status'] != 200 or not data['data']:
+                    await interaction.followup.send("Item not found. Please check the item name and try again.")
+                    return
+                
+                # Assuming the first result is the most relevant
+                item = data['data'][0]
+                name = item.get('name', 'Unknown Item')
+                description = item.get('description', 'No description available.')
+                last_seen = item.get('lastSeen', 'Unknown')
+                rarity = item.get('rarity', 'Unknown Rarity').capitalize()
+                icon_url = item.get('images', {}).get('icon', '')
+                
+                embed = discord.Embed(title=name, description=description, color=discord.Color.blue())
+                embed.add_field(name="Rarity", value=rarity, inline=False)
+                embed.add_field(name="Last Seen", value=last_seen, inline=False)
+                
+                if icon_url:
+                    embed.set_thumbnail(url=icon_url)
+                
+                await interaction.followup.send(embed=embed)
+
+        except aiohttp.ClientError:
+            await interaction.followup.send("Encountered an error while fetching data. Please try again later.")
+
+@bot.tree.command(name="fnshopupcoming", description="Displays upcoming items in the Fortnite item shop")
+async def fnshopupcoming(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+
+    api_url = "https://fnbr.co/api/upcoming"
+    headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(api_url, headers=headers) as response:
+                if response.status != 200:
+                    # Log or print the response status for debugging
+                    print(f"Unexpected response {response.status} from FNBR API.")
+                    await interaction.followup.send("Failed to fetch data from the FNBR API. Please try again later.")
+                    return
+                
+                data = await response.json()
+                # Check for proper status in the JSON data
+                if data.get('status') != 200:
+                    print(f"FNBR API error response: {data.get('error', 'No error message provided.')}")
+                    await interaction.followup.send("There was an error fetching upcoming items. Please try again later.")
+                    return
+
+                upcoming_items = data.get('data')
+                if not upcoming_items:
+                    await interaction.followup.send("There are no upcoming items found. Please check back later.")
+                    return
+
+                embed = discord.Embed(title="Upcoming Fortnite Items", description="Here are the items expected to arrive in the Fortnite item shop soon.", color=discord.Color.dark_gold())
+                for item in upcoming_items[:10]:  # Limit to first 10 items to avoid embed limits
+                    name = item.get('name', 'Unknown Item')
+                    rarity = item.get('rarity', 'Unknown Rarity').capitalize()
+                    item_type = item.get('type', 'Unknown Type').capitalize()
+                    icon_url = item.get('images', {}).get('icon', '')
+                    
+                    embed_value = f"Rarity: {rarity}\nType: {item_type}"
+                    embed.add_field(name=name, value=embed_value, inline=False)
+                    if icon_url:
+                        embed.set_thumbnail(url=icon_url)  # Consider using set_thumbnail for a single image
+
+                await interaction.followup.send(embed=embed)
+
+        except aiohttp.ClientError as e:
+            print(f"AIOHTTP client error: {e}")
+            await interaction.followup.send("Encountered an error while trying to communicate with the FNBR API. Please try again later.")
+        except Exception as e:
+            # Catch-all for any other errors
+            print(f"An unexpected error occurred: {e}")
+            await interaction.followup.send("An unexpected error occurred. Please try again later.")
+
+
+# ---------------------------------------------------FNBR COMMANDS ENDS------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------------BOT GAMES-----------------------------------------------------------
+
 
 
 # _________________________________________________BLACKJACK_____________________________________________
