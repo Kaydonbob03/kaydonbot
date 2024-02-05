@@ -1046,37 +1046,46 @@ async def fnshopcurrent(interaction: discord.Interaction):
             if response.status == 200:
                 shop_data = await response.json()
                 date = shop_data['data'].get('date', 'Unknown date')
+
+                # Initialize the first embed
                 embed = discord.Embed(title="Fortnite Item Shop", description=f"Shop for {date}", color=discord.Color.blue())
+                embeds = [embed]  # List to hold all embeds
+                current_embed = embed  # Reference to the current embed being added to
 
                 sections = shop_data['data'].get('sections', [])
-                fields_added = 0  # Keep track of how many fields have been added to the embed
-
                 for section in sections:
                     section_name = section.get('displayName', 'Unknown Section')
                     items = section.get('items', [])
-                    item_names = []  # Collect item names to display in one field
+                    item_names = []
 
                     for item_id in items:
-                        if fields_added >= 25:  # Check if we've reached the embed field limit
-                            break  # Stop adding fields to prevent going over the limit
-
+                        # Use the item ID to fetch the details from the images endpoint
                         item_url = f"https://fnbr.co/api/images?search={item_id}"
                         async with session.get(item_url, headers=headers) as item_response:
                             if item_response.status == 200:
                                 item_data = await item_response.json()
                                 item_names.append(item_data['data'][0]['name'])  # Assuming first result is the name
-                                fields_added += 1
                             else:
                                 item_names.append("Details unavailable")
-                                fields_added += 1
 
-                    # Add a field with all item names for this section
-                    embed.add_field(name=section_name, value="\n".join(item_names), inline=False)
-                    await asyncio.sleep(0.1)  # Delay to avoid rate limit issues
+                        # Check if the current embed has reached the field limit
+                        if len(current_embed.fields) == 25:
+                            # Create a new embed and add it to the list
+                            current_embed = discord.Embed(title="Fortnite Item Shop Continued...", color=discord.Color.blue())
+                            embeds.append(current_embed)
 
-                await interaction.followup.send(embed=embed)
+                        # Add a field to the current embed with item names
+                        current_embed.add_field(name=section_name, value="\n".join(item_names), inline=False)
+                        item_names = []  # Reset the list for the next set of items
+
+                        await asyncio.sleep(0.1)  # Sleep to prevent rate limit issues
+
+                # Send all the embeds
+                for embed in embeds:
+                    await interaction.followup.send(embed=embed)
             else:
                 await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
+
 
 
 
