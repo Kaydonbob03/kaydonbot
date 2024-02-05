@@ -1034,6 +1034,63 @@ async def sourcecode(interaction: discord.Interaction):
 # ---------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------FNBR COMMANDS--------------------------------------------------------
 
+# WORKING FR
+
+# @bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
+# async def fnshopcurrent(interaction: discord.Interaction):
+#     await interaction.response.defer()
+
+#     api_url = "https://fnbr.co/api/shop"
+#     headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
+
+#     async with aiohttp.ClientSession() as session:
+#         async with session.get(api_url, headers=headers) as response:
+#             if response.status == 200:
+#                 shop_data = await response.json()
+#                 date = shop_data['data'].get('date', 'Unknown date')
+
+#                 # Initialize the first embed
+#                 embed = discord.Embed(title="Fortnite Item Shop", description=f"Shop for {date}", color=discord.Color.blue())
+#                 embeds = [embed]  # List to hold all embeds
+#                 current_embed = embed  # Reference to the current embed being added to
+
+#                 sections = shop_data['data'].get('sections', [])
+#                 for section in sections:
+#                     section_name = section.get('displayName', 'Unknown Section')
+#                     items = section.get('items', [])
+#                     item_names = []
+
+#                     for item_id in items:
+#                         # Use the item ID to fetch the details from the images endpoint
+#                         item_url = f"https://fnbr.co/api/images?search={item_id}"
+#                         async with session.get(item_url, headers=headers) as item_response:
+#                             if item_response.status == 200:
+#                                 item_data = await item_response.json()
+#                                 item_names.append(item_data['data'][0]['name'])  # Assuming first result is the name
+#                             else:
+#                                 item_names.append("Details unavailable")
+
+#                         # Check if the current embed has reached the field limit
+#                         if len(current_embed.fields) == 25:
+#                             # Create a new embed and add it to the list
+#                             current_embed = discord.Embed(title="Fortnite Item Shop Continued...", color=discord.Color.blue())
+#                             embeds.append(current_embed)
+
+#                         # Add a field to the current embed with item names
+#                         current_embed.add_field(name=section_name, value="\n".join(item_names), inline=False)
+#                         item_names = []  # Reset the list for the next set of items
+
+#                         await asyncio.sleep(0.1)  # Sleep to prevent rate limit issues
+
+#                 # Send all the embeds
+#                 for embed in embeds:
+#                     await interaction.followup.send(embed=embed)
+#             else:
+#                 await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
+
+
+# TESTING
+
 @bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
 async def fnshopcurrent(interaction: discord.Interaction):
     await interaction.response.defer()
@@ -1056,7 +1113,7 @@ async def fnshopcurrent(interaction: discord.Interaction):
                 for section in sections:
                     section_name = section.get('displayName', 'Unknown Section')
                     items = section.get('items', [])
-                    item_names = []
+                    item_names = []  # Collect item names to display in one field
 
                     for item_id in items:
                         # Use the item ID to fetch the details from the images endpoint
@@ -1074,11 +1131,10 @@ async def fnshopcurrent(interaction: discord.Interaction):
                             current_embed = discord.Embed(title="Fortnite Item Shop Continued...", color=discord.Color.blue())
                             embeds.append(current_embed)
 
-                        # Add a field to the current embed with item names
+                    # Add a single field to the current embed with all item names for this section
+                    if item_names:  # Only add the field if there are item names
                         current_embed.add_field(name=section_name, value="\n".join(item_names), inline=False)
-                        item_names = []  # Reset the list for the next set of items
-
-                        await asyncio.sleep(0.1)  # Sleep to prevent rate limit issues
+                    await asyncio.sleep(0.1)  # Sleep to prevent rate limit issues
 
                 # Send all the embeds
                 for embed in embeds:
@@ -1086,39 +1142,6 @@ async def fnshopcurrent(interaction: discord.Interaction):
             else:
                 await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
 
-
-
-
-# @bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
-# async def fnshopcurrent(interaction: discord.Interaction):
-#     await interaction.response.defer()
-
-#     api_url = "https://fnbr.co/api/shop"
-#     headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
-
-#     async with aiohttp.ClientSession() as session:
-#         async with session.get(api_url, headers=headers) as response:
-#             if response.status == 200:
-#                 shop_data = await response.json()
-#                 date = shop_data['data'].get('date', 'Unknown date')
-
-#                 sections = shop_data['data'].get('sections', [])
-#                 for section in sections:
-#                     section_name = section.get('displayName', 'Unknown Section')
-#                     items = section.get('items', [])
-#                     for item_id in items:
-#                         item_response = await session.get(f"https://fnbr.co/api/images/{item_id}", headers=headers)
-#                         if item_response.status == 200:
-#                             item_data = await item_response.json()
-#                             for item in item_data['data']:
-#                                 name = item.get('name', 'Unknown Item')
-#                                 icon_url = item.get('images', {}).get('icon', '')
-#                                 embed = discord.Embed(title=name, description=f"Item from {section_name} on {date}", color=discord.Color.blue())
-#                                 if icon_url:
-#                                     embed.set_image(url=icon_url)
-#                                 await interaction.followup.send(embed=embed)
-#             else:
-#                 await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
 
 #---
 
