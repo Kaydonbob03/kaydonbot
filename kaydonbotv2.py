@@ -1033,18 +1033,13 @@ async def sourcecode(interaction: discord.Interaction):
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------FNBR COMMANDS--------------------------------------------------------
-    
-import asyncio
 
 @bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
 async def fnshopcurrent(interaction: discord.Interaction):
     await interaction.response.defer()
 
     api_url = "https://fnbr.co/api/shop"
-    images_api_url = "https://fnbr.co/api/images"
     headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
-    
-    delay_between_requests = 0.1  # Adjust the delay as needed to avoid rate limits
 
     async with aiohttp.ClientSession() as session:
         async with session.get(api_url, headers=headers) as response:
@@ -1054,33 +1049,34 @@ async def fnshopcurrent(interaction: discord.Interaction):
                 embed = discord.Embed(title="Fortnite Item Shop", description=f"Shop for {date}", color=discord.Color.blue())
 
                 sections = shop_data['data'].get('sections', [])
+                fields_added = 0  # Keep track of how many fields have been added to the embed
+
                 for section in sections:
                     section_name = section.get('displayName', 'Unknown Section')
                     items = section.get('items', [])
+                    item_names = []  # Collect item names to display in one field
 
                     for item_id in items:
-                        # Use the item ID to fetch the details from the images endpoint
-                        async with session.get(f"{images_api_url}/search={item_id}", headers=headers) as item_response:
+                        if fields_added >= 25:  # Check if we've reached the embed field limit
+                            break  # Stop adding fields to prevent going over the limit
+
+                        item_url = f"https://fnbr.co/api/images?search={item_id}"
+                        async with session.get(item_url, headers=headers) as item_response:
                             if item_response.status == 200:
                                 item_data = await item_response.json()
-                                item_details = item_data['data'][0]  # Assuming first result is most relevant
-                                name = item_details.get('name', 'Unknown Item')
-                                icon_url = item_details.get('images', {}).get('icon', '')
-
-                                # Add item details to the embed
-                                embed.add_field(name=name, value=section_name, inline=True)
-                                if icon_url and not embed.thumbnail.url:  # Set thumbnail to the first available image
-                                    embed.set_thumbnail(url=icon_url)
-
+                                item_names.append(item_data['data'][0]['name'])  # Assuming first result is the name
+                                fields_added += 1
                             else:
-                                embed.add_field(name="Unknown Item", value="Details could not be fetched", inline=True)
-                            
-                            await asyncio.sleep(delay_between_requests)  # Delay to avoid rate limit
+                                item_names.append("Details unavailable")
+                                fields_added += 1
+
+                    # Add a field with all item names for this section
+                    embed.add_field(name=section_name, value="\n".join(item_names), inline=False)
+                    await asyncio.sleep(0.1)  # Delay to avoid rate limit issues
 
                 await interaction.followup.send(embed=embed)
             else:
                 await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
-
 
 
 
