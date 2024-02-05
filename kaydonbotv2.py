@@ -1048,42 +1048,35 @@ async def fnshopcurrent(interaction: discord.Interaction):
                 date = shop_data['data'].get('date', 'Unknown date')
 
                 embed = discord.Embed(title="Fortnite Item Shop", description=f"Shop for {date}", color=discord.Color.blue())
+
                 sections = shop_data['data'].get('sections', [])
-
-                # Flag to set only one image for the entire embed
-                image_set = False
-
                 for section in sections:
                     section_name = section.get('displayName', 'Unknown Section')
                     items = section.get('items', [])
-                    item_names = []  # List to hold all item names for this section
+                    item_details = []  # List to hold details of all items in this section
 
-                    # Fetch details for each item in the section
                     for item_id in items:
-                        item_api_url = f"https://fnbr.co/api/images/{item_id}"
-                        async with session.get(item_api_url, headers=headers) as item_response:
-                            if item_response.status == 200:
-                                item_data = await item_response.json()
-                                item = item_data.get('data', [])[0]  # Assume the first item is most relevant
-                                item_names.append(item.get('name', 'Unknown Item'))
+                        # The item details should be available directly in the shop_data response.
+                        # Let's assume that shop_data contains an 'all_items' dictionary with details keyed by item_id
+                        item = shop_data['data'].get('all_items', {}).get(item_id, {})
+                        if item:  # Check if item details are present
+                            name = item.get('name', 'Unknown Item')
+                            item_details.append(name)
+                            # Set the thumbnail to the first available image
+                            icon_url = item.get('images', {}).get('icon', '')
+                            if icon_url and not embed.thumbnail.url:  # Check if the thumbnail is not already set
+                                embed.set_thumbnail(url=icon_url)
 
-                                # Set the thumbnail to the first available image
-                                if not image_set:
-                                    icon_url = item.get('images', {}).get('icon', '')
-                                    if icon_url:
-                                        embed.set_thumbnail(url=icon_url)
-                                        image_set = True
-                            else:
-                                # Handle the case where item details could not be fetched
-                                item_names.append("Item details unavailable")
-
-                    # Add a field for the section with all item names joined by a newline
-                    if item_names:
-                        embed.add_field(name=section_name, value="\n".join(item_names), inline=False)
+                    # Add a field for the section with all item names
+                    if item_details:
+                        embed.add_field(name=section_name, value="\n".join(item_details), inline=False)
+                    else:
+                        embed.add_field(name=section_name, value="No items available", inline=False)
+                
                 await interaction.followup.send(embed=embed)
-
             else:
                 await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
+
 
 
 # @bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
