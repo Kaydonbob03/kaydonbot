@@ -1034,48 +1034,53 @@ async def sourcecode(interaction: discord.Interaction):
 # ---------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------FNBR COMMANDS--------------------------------------------------------
     
+import asyncio
+
 @bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
 async def fnshopcurrent(interaction: discord.Interaction):
     await interaction.response.defer()
 
     api_url = "https://fnbr.co/api/shop"
+    images_api_url = "https://fnbr.co/api/images"
     headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
+    
+    delay_between_requests = 0.1  # Adjust the delay as needed to avoid rate limits
 
     async with aiohttp.ClientSession() as session:
         async with session.get(api_url, headers=headers) as response:
             if response.status == 200:
                 shop_data = await response.json()
                 date = shop_data['data'].get('date', 'Unknown date')
-
                 embed = discord.Embed(title="Fortnite Item Shop", description=f"Shop for {date}", color=discord.Color.blue())
 
                 sections = shop_data['data'].get('sections', [])
                 for section in sections:
                     section_name = section.get('displayName', 'Unknown Section')
                     items = section.get('items', [])
-                    item_details = []  # List to hold details of all items in this section
 
                     for item_id in items:
-                        # The item details should be available directly in the shop_data response.
-                        # Let's assume that shop_data contains an 'all_items' dictionary with details keyed by item_id
-                        item = shop_data['data'].get('all_items', {}).get(item_id, {})
-                        if item:  # Check if item details are present
-                            name = item.get('name', 'Unknown Item')
-                            item_details.append(name)
-                            # Set the thumbnail to the first available image
-                            icon_url = item.get('images', {}).get('icon', '')
-                            if icon_url and not embed.thumbnail.url:  # Check if the thumbnail is not already set
-                                embed.set_thumbnail(url=icon_url)
+                        # Use the item ID to fetch the details from the images endpoint
+                        async with session.get(f"{images_api_url}/search={item_id}", headers=headers) as item_response:
+                            if item_response.status == 200:
+                                item_data = await item_response.json()
+                                item_details = item_data['data'][0]  # Assuming first result is most relevant
+                                name = item_details.get('name', 'Unknown Item')
+                                icon_url = item_details.get('images', {}).get('icon', '')
 
-                    # Add a field for the section with all item names
-                    if item_details:
-                        embed.add_field(name=section_name, value="\n".join(item_details), inline=False)
-                    else:
-                        embed.add_field(name=section_name, value="No items available", inline=False)
-                
+                                # Add item details to the embed
+                                embed.add_field(name=name, value=section_name, inline=True)
+                                if icon_url and not embed.thumbnail.url:  # Set thumbnail to the first available image
+                                    embed.set_thumbnail(url=icon_url)
+
+                            else:
+                                embed.add_field(name="Unknown Item", value="Details could not be fetched", inline=True)
+                            
+                            await asyncio.sleep(delay_between_requests)  # Delay to avoid rate limit
+
                 await interaction.followup.send(embed=embed)
             else:
                 await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
+
 
 
 
