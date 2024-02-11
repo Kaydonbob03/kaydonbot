@@ -238,7 +238,7 @@ def get_dev_commands_embed():
     embed = discord.Embed(
         title="Kaydonbot Dev Tools Commands",
         description="Commands for use by developers",
-        color=discord.Color.brown()
+        color=discord.Color.blue()
     )
     embed.add_field(name="/sourcecode", value="returns the github repository", inline=False)
     embed.set_footer(text="Page 5/6")
