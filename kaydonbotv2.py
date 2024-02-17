@@ -1104,31 +1104,6 @@ async def upcoming_birthdays(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve upcoming birthdays: {e}")
 
-@bot.tree.command(name="userinfo", description="Get information about a user")
-async def userinfo(interaction: discord.Interaction, user: discord.User = None):
-    user = user or interaction.user  # If no user is provided, use the user who invoked the command
-
-    embed = discord.Embed(title=f"{user.name}'s info", color=discord.Color.blue())
-    embed.add_field(name="ID", value=user.id, inline=False)
-    embed.add_field(name="Name", value=user.name, inline=False)
-    embed.add_field(name="Discriminator", value=user.discriminator, inline=False)
-    embed.add_field(name="Bot", value=user.bot, inline=False)
-    embed.add_field(name="Created at", value=user.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=False)
-
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="serverinfo", description="Get information about the server")
-async def serverinfo(interaction: discord.Interaction):
-    guild = interaction.guild
-
-    embed = discord.Embed(title=f"{guild.name}'s info", color=discord.Color.blue())
-    embed.add_field(name="ID", value=guild.id, inline=False)
-    embed.add_field(name="Name", value=guild.name, inline=False)
-    embed.add_field(name="Region", value=str(guild.region), inline=False)
-    embed.add_field(name="Member count", value=guild.member_count, inline=False)
-    embed.add_field(name="Created at", value=guild.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=False)
-
-    await interaction.response.send_message(embed=embed)
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
