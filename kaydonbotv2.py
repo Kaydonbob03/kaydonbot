@@ -1026,7 +1026,7 @@ async def urban(interaction: discord.Interaction, term: str):
 
 conn = sqlite3.connect('birthdays.db')
 c = conn.cursor()
-c.execute('''CREATE TABLE birthdays
+c.execute('''CREATE TABLE IF NOT EXISTS birthdays
              (user_id text, server_id text, birthday text)''')
 conn.commit()
 conn.close()
