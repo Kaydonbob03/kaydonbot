@@ -9,6 +9,7 @@ import datetime
 import re
 import time
 import aiohttp
+import sqlite3
 from langdetect import detect, LangDetectException
 from discord.ext import commands, tasks
 from discord import app_commands
@@ -66,6 +67,7 @@ async def on_ready():
     await bot.tree.sync()
     global welcome_channels
     welcome_channels = await load_welcome_channels()
+    check_birthdays.start()
     print('Kaydonbot  Copyright (C) 2024  Kayden Cormier -- K-GamesMedia')
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
@@ -183,6 +185,10 @@ def get_general_commands_embed():
     embed.add_field(name="/random [choices]", value="Make a random choice", inline=False)
     embed.add_field(name="/scream", value="Bot will scream randomly from a list screams", inline=False)
     embed.add_field(name="/screamedit [scream]", value="adds a scream to the list if its not already there", inline=False)
+    embed.add_field(name="/userinfo [user]", value="Get information about a user", inline=False)
+    embed.add_field(name="/serverinfo", value="Get information about the server", inline=False)
+    embed.add_field(name="/birthday [date]", value="Set your birthday", inline=False)
+    embed.add_field(name="/upcomingbirthdays", value="Get a list of upcoming birthdays", inline=False)
     embed.set_footer(text="Page 1/6")
     return embed
 
@@ -1018,6 +1024,112 @@ async def urban(interaction: discord.Interaction, term: str):
             print(f"Failed to fetch Urban Dictionary data: {e}")
             await interaction.followup.send("Encountered an error while fetching data.")
 
+conn = sqlite3.connect('birthdays.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE birthdays
+             (user_id text, server_id text, birthday text)''')
+conn.commit()
+conn.close()
+
+@bot.tree.command(name="birthday", description="Set your birthday")
+async def birthday(interaction: discord.Interaction, date: str):
+    try:
+        await interaction.response.defer()
+        # Parse the date string into a datetime object
+        birthday_date = dateparser.parse(date)
+        if not birthday_date:
+            await interaction.followup.send("Invalid date format.")
+            return
+
+        # Save the birthday in the database
+        conn = sqlite3.connect('birthdays.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO birthdays VALUES (?, ?, ?)",
+                  (interaction.user.id, interaction.guild.id, birthday_date.strftime('%Y-%m-%d')))
+        conn.commit()
+        conn.close()
+
+        await interaction.followup.send(f"Your birthday is set to: {birthday_date.strftime('%Y-%m-%d')}")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to set birthday: {e}")
+
+@tasks.loop(hours=24)
+async def check_birthdays():
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+
+    conn = sqlite3.connect('birthdays.db')
+    c = conn.cursor()
+    c.execute("SELECT user_id, server_id FROM birthdays WHERE birthday=?", (today,))
+    birthdays = c.fetchall()
+    conn.close()
+
+    for user_id, server_id in birthdays:
+        guild = bot.get_guild(int(server_id))
+        if guild:
+            user = guild.get_member(int(user_id))
+            if user:
+                # Try to get the #announcements channel, otherwise use the #general channel
+                channel = discord.utils.get(guild.text_channels, name='announcements') or discord.utils.get(guild.text_channels, name='general')
+                if channel:
+                    await channel.send(f"@here please wish a very happy birthday to {user.mention}. Happy Birthday !!!")
+
+
+@bot.tree.command(name="upcomingbirthdays", description="Get upcoming birthdays")
+async def upcoming_birthdays(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer()
+        conn = sqlite3.connect('birthdays.db')
+        c = conn.cursor()
+        c.execute("SELECT user_id, birthday FROM birthdays WHERE server_id = ?", (interaction.guild.id,))
+        birthdays = c.fetchall()
+        conn.close()
+
+        if not birthdays:
+            await interaction.followup.send("No upcoming birthdays found.")
+            return
+
+        upcoming_birthdays = []
+        for user_id, birthday in birthdays:
+            birthday_date = dateparser.parse(birthday)
+            if birthday_date:
+                upcoming_birthdays.append((user_id, birthday_date))
+
+        if not upcoming_birthdays:
+            await interaction.followup.send("No upcoming birthdays found.")
+            return
+
+        upcoming_birthdays.sort(key=lambda x: x[1])  # Sort by birthday date
+        birthday_info = "\n".join([f"<@{user_id}> - {birthday_date.strftime('%Y-%m-%d')}" for user_id, birthday_date in upcoming_birthdays])
+        await interaction.followup.send(f"Upcoming birthdays:\n{birthday_info}")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to retrieve upcoming birthdays: {e}")
+
+@bot.tree.command(name="userinfo", description="Get information about a user")
+async def userinfo(interaction: discord.Interaction, user: discord.User = None):
+    user = user or interaction.user  # If no user is provided, use the user who invoked the command
+
+    embed = discord.Embed(title=f"{user.name}'s info", color=discord.Color.blue())
+    embed.add_field(name="ID", value=user.id, inline=False)
+    embed.add_field(name="Name", value=user.name, inline=False)
+    embed.add_field(name="Discriminator", value=user.discriminator, inline=False)
+    embed.add_field(name="Bot", value=user.bot, inline=False)
+    embed.add_field(name="Created at", value=user.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=False)
+
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="serverinfo", description="Get information about the server")
+async def serverinfo(interaction: discord.Interaction):
+    guild = interaction.guild
+
+    embed = discord.Embed(title=f"{guild.name}'s info", color=discord.Color.blue())
+    embed.add_field(name="ID", value=guild.id, inline=False)
+    embed.add_field(name="Name", value=guild.name, inline=False)
+    embed.add_field(name="Region", value=str(guild.region), inline=False)
+    embed.add_field(name="Member count", value=guild.member_count, inline=False)
+    embed.add_field(name="Created at", value=guild.created_at.strftime("%Y-%m-%d %H:%M:%S"), inline=False)
+
+    await interaction.response.send_message(embed=embed)
+
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------DEV COMMANDS---------------------------------------------------------
@@ -1034,62 +1146,6 @@ async def sourcecode(interaction: discord.Interaction):
 # ---------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------FNBR COMMANDS--------------------------------------------------------
 
-# WORKING FR
-
-# @bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
-# async def fnshopcurrent(interaction: discord.Interaction):
-#     await interaction.response.defer()
-
-#     api_url = "https://fnbr.co/api/shop"
-#     headers = {"x-api-key": os.getenv("FNBR_API_KEY")}
-
-#     async with aiohttp.ClientSession() as session:
-#         async with session.get(api_url, headers=headers) as response:
-#             if response.status == 200:
-#                 shop_data = await response.json()
-#                 date = shop_data['data'].get('date', 'Unknown date')
-
-#                 # Initialize the first embed
-#                 embed = discord.Embed(title="Fortnite Item Shop", description=f"Shop for {date}", color=discord.Color.blue())
-#                 embeds = [embed]  # List to hold all embeds
-#                 current_embed = embed  # Reference to the current embed being added to
-
-#                 sections = shop_data['data'].get('sections', [])
-#                 for section in sections:
-#                     section_name = section.get('displayName', 'Unknown Section')
-#                     items = section.get('items', [])
-#                     item_names = []
-
-#                     for item_id in items:
-#                         # Use the item ID to fetch the details from the images endpoint
-#                         item_url = f"https://fnbr.co/api/images?search={item_id}"
-#                         async with session.get(item_url, headers=headers) as item_response:
-#                             if item_response.status == 200:
-#                                 item_data = await item_response.json()
-#                                 item_names.append(item_data['data'][0]['name'])  # Assuming first result is the name
-#                             else:
-#                                 item_names.append("Details unavailable")
-
-#                         # Check if the current embed has reached the field limit
-#                         if len(current_embed.fields) == 25:
-#                             # Create a new embed and add it to the list
-#                             current_embed = discord.Embed(title="Fortnite Item Shop Continued...", color=discord.Color.blue())
-#                             embeds.append(current_embed)
-
-#                         # Add a field to the current embed with item names
-#                         current_embed.add_field(name=section_name, value="\n".join(item_names), inline=False)
-#                         item_names = []  # Reset the list for the next set of items
-
-#                         await asyncio.sleep(0.1)  # Sleep to prevent rate limit issues
-
-#                 # Send all the embeds
-#                 for embed in embeds:
-#                     await interaction.followup.send(embed=embed)
-#             else:
-#                 await interaction.followup.send("Failed to fetch the current item shop. Please try again later.")
-
-
-# TESTING
 
 @bot.tree.command(name="fnshopcurrent", description="Displays the current Fortnite item shop")
 async def fnshopcurrent(interaction: discord.Interaction):
@@ -1169,12 +1225,14 @@ async def fnshopseen(interaction: discord.Interaction, itemname: str):
                 item = data['data'][0]
                 name = item.get('name', 'Unknown Item')
                 description = item.get('description', 'No description available.')
-                last_seen = item.get('lastSeen', 'Unknown')
+                price = item.get('price', 'Unknown Price')
+                last_seen = item.get('seen', 'Unknown')
                 rarity = item.get('rarity', 'Unknown Rarity').capitalize()
                 icon_url = item.get('images', {}).get('icon', '')
                 
                 embed = discord.Embed(title=name, description=description, color=discord.Color.blue())
                 embed.add_field(name="Rarity", value=rarity, inline=False)
+                embed.add_field(name="Price", value=price, inline=False)
                 embed.add_field(name="Last Seen", value=last_seen, inline=False)
                 
                 if icon_url:
