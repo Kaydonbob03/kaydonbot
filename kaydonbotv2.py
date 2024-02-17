@@ -293,7 +293,7 @@ async def on_reaction_add(reaction, user):
 # ---------------------------------------------------SUGGESTIONS CMDS--------------------------------------------------------
 
 # Ensure the suggestions directory exists
-os.makedirs("/suggestions", exist_ok=True)
+os.makedirs("suggestions", exist_ok=True)
 
 @bot.tree.command(name="cmdsuggestion", description="Suggest a new command")
 async def cmdsuggestion(interaction: discord.Interaction, suggestion: str):
