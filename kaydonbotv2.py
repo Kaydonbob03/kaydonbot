@@ -1055,24 +1055,26 @@ async def birthday(interaction: discord.Interaction, date: str):
 
 @tasks.loop(hours=24)
 async def check_birthdays():
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    try:
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    conn = sqlite3.connect('birthdays.db')
-    c = conn.cursor()
-    c.execute("SELECT user_id, server_id FROM birthdays WHERE birthday=?", (today,))
-    birthdays = c.fetchall()
-    conn.close()
+        conn = sqlite3.connect('birthdays.db')
+        c = conn.cursor()
+        c.execute("SELECT user_id, server_id FROM birthdays WHERE birthday=?", (today,))
+        birthdays = c.fetchall()
+        conn.close()
 
-    for user_id, server_id in birthdays:
-        guild = bot.get_guild(int(server_id))
-        if guild:
-            user = guild.get_member(int(user_id))
-            if user:
-                # Try to get the #announcements channel, otherwise use the #general channel
-                channel = discord.utils.get(guild.text_channels, name='announcements') or discord.utils.get(guild.text_channels, name='general')
-                if channel:
-                    await channel.send(f"@here please wish a very happy birthday to {user.mention}. Happy Birthday !!!")
-
+        for user_id, server_id in birthdays:
+            guild = bot.get_guild(int(server_id))
+            if guild:
+                user = guild.get_member(int(user_id))
+                if user:
+                    # Try to get the #birthdays channel, if not available then #announcements, and finally #general
+                    channel = discord.utils.get(guild.text_channels, name='birthdays') or discord.utils.get(guild.text_channels, name='announcements') or discord.utils.get(guild.text_channels, name='general')
+                    if channel:
+                        await channel.send(f"@here please wish a very happy birthday to {user.mention}. Happy Birthday !!!")
+    except Exception as e:
+        print(f"An error occurred while checking birthdays: {e}")
 
 @bot.tree.command(name="upcomingbirthdays", description="Get upcoming birthdays")
 async def upcoming_birthdays(interaction: discord.Interaction):
