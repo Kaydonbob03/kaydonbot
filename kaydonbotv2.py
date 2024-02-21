@@ -191,7 +191,7 @@ def get_general_commands_embed():
     embed.add_field(name="/userinfo [user]", value="Get information about a user", inline=False)
     embed.add_field(name="/serverinfo", value="Get information about the server", inline=False)
     embed.add_field(name="/birthday [date]", value="Set your birthday", inline=False)
-    embed.add_field(name="/upcomingbirthdays", value="Get list of upcoming birthdays within 2 months", inline=False)
+    embed.add_field(name="/upcomingbirthdays", value="Get list of upcoming birthdays within 180 days", inline=False)
     embed.set_footer(text="Page 1/6")
     return embed
 
@@ -1083,7 +1083,7 @@ async def check_birthdays():
     except Exception as e:
         print(f"An error occurred while checking birthdays: {e}")
 
-@bot.tree.command(name="upcomingbirthdays", description="Get upcoming birthdays for the next 2 months")
+@bot.tree.command(name="upcomingbirthdays", description="Get upcoming birthdays for the next 180 days")
 async def upcoming_birthdays(interaction: discord.Interaction):
     try:
         conn = sqlite3.connect('birthdays.db')
