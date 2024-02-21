@@ -1100,8 +1100,11 @@ async def upcoming_birthdays(interaction: discord.Interaction):
         for user_id, birthday in birthdays:
             birthday_date = dateparser.parse(birthday)
             if birthday_date:
+                # Adjust the year of the birthday to this year for comparison
+                birthday_date = birthday_date.replace(year=datetime.now().year)
+
                 # Check if the birthday is within the next 2 months
-                if datetime.now() <= birthday_date <= datetime.now() + timedelta(days=60):
+                if datetime.now() <= birthday_date <= datetime.now() + timedelta(days=180):
                     upcoming_birthdays.append((user_id, birthday_date))
 
         if not upcoming_birthdays:
@@ -1111,8 +1114,9 @@ async def upcoming_birthdays(interaction: discord.Interaction):
         upcoming_birthdays.sort(key=lambda x: x[1])  # Sort by birthday date
         birthday_info = "\n".join([f"<@{user_id}> - {birthday_date.strftime('%B %d')}" for user_id, birthday_date in upcoming_birthdays])
 
-        embed = discord.Embed(title="Upcoming birthdays", description=birthday_info, color=0x00ff00)
+        embed = discord.Embed(title="Upcoming birthdays", description=birthday_info, color=discord.Color.gold())
         await interaction.response.send_message(embed=embed)
+
     except Exception as e:
         await interaction.response.send_message(f"Failed to retrieve upcoming birthdays: {e}")
 
