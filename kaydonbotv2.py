@@ -1154,7 +1154,7 @@ async def restart(interaction: discord.Interaction):
         await interaction.response.send_message("You are not authorized to use this command.")
 
     @bot.tree.command(name="update", description="Update and restart the bot")
-    async def update(interaction: discord.Interaction):
+    async def bot_update(interaction: discord.Interaction):
         # Load the authorized user IDs from the JSON file
         with open("authorized_users.json", "r") as file:
             authorized_users = json.load(file)["users"]
