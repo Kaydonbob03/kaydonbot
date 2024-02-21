@@ -1111,7 +1111,7 @@ async def upcoming_birthdays(interaction: discord.Interaction):
         upcoming_birthdays.sort(key=lambda x: x[1])  # Sort by birthday date
         birthday_info = "\n".join([f"<@{user_id}> - {birthday_date.strftime('%B %d')}" for user_id, birthday_date in upcoming_birthdays])
 
-        embed = Embed(title="Upcoming birthdays", description=birthday_info, color=0x00ff00)
+        embed = discord.Embed(title="Upcoming birthdays", description=birthday_info, color=0x00ff00)
         await interaction.response.send_message(embed=embed)
     except Exception as e:
         await interaction.response.send_message(f"Failed to retrieve upcoming birthdays: {e}")
