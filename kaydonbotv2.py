@@ -5,11 +5,11 @@ import requests
 import random
 import asyncio
 import dateparser
-import datetime
 import re
 import time
 import aiohttp
 import sqlite3
+from datetime import datetime, timedelta
 from langdetect import detect, LangDetectException
 from discord.ext import commands, tasks
 from discord import app_commands
@@ -1530,6 +1530,28 @@ async def truth_or_dare(interaction: discord.Interaction):
 # -------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------BOT TOKEN BELOW---------------------------------------------------------
 
+log_file = "command_log.log"
+log_time_limit = timedelta(hours=6)
+
+@bot.event
+async def on_command(ctx):
+    now = datetime.now()
+
+    # Open the log file in append mode
+    with open(log_file, "a") as file:
+        # Write the server name, user name and command to the log file
+        file.write(f"{now}: Server: {ctx.guild.name}, User: {ctx.author.name}, Command: {ctx.command}\n")
+
+    # Open the log file in read mode
+    with open(log_file, "r") as file:
+        lines = file.readlines()
+
+    # Filter out lines that are older than the time limit
+    lines = [line for line in lines if now - datetime.strptime(line.split(":")[0], "%Y-%m-%d %H:%M:%S.%f") < log_time_limit]
+
+    # Open the log file in write mode and overwrite it with the filtered lines
+    with open(log_file, "w") as file:
+        file.writelines(lines)
 
 
 # Run the bot with your token

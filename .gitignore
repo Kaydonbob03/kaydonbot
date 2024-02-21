@@ -7,3 +7,5 @@ nohup.out
 # Ignore weird second instance of this folder
 hosting/suggestions/
 
+# Ignore Command Log File
+command_log.log
