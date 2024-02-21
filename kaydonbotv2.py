@@ -9,6 +9,7 @@ import re
 import time
 import aiohttp
 import sqlite3
+import sys
 from datetime import datetime, timedelta
 from langdetect import detect, LangDetectException
 from discord.ext import commands, tasks
@@ -52,7 +53,7 @@ client = OpenAI(api_key=openai_api_key)
 intents = discord.Intents.default()
 intents.messages = True  # If you need access to messages
 intents.message_content = True  
-bot = commands.Bot(command_prefix=';', intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Global dictionary to store welcome channel configurations
 welcome_channels = {}
@@ -83,7 +84,8 @@ async def change_status():
     # Define the statuses
     statuses = [
         discord.Activity(type=discord.ActivityType.watching, name="/commands"),
-        discord.Game(f"in {num_servers} servers")
+        discord.Game(f"in {num_servers} servers"),
+        discord.Activity(type=discord.ActivityType.watching, name="twitch.tv/kaydonbob03")
     ]
     # Choose a random status and set it
     current_status = random.choice(statuses) 
@@ -98,7 +100,7 @@ async def on_guild_join(guild):
         description="Thanks for inviting me to your server!",
         color=discord.Color.gold()
     )
-    embed.add_field(name="Prefix", value="; for non-slash commands", inline=False)
+    embed.add_field(name="Prefix", value="! for non-slash commands", inline=False)
     embed.add_field(name="Commands", value="Use `/commands` to see all my commands", inline=False)
     embed.set_footer(text="Kaydonbot - Copyright (c) Kayden Cormier -- K-GamesMedia")
 
@@ -188,7 +190,7 @@ def get_general_commands_embed():
     embed.add_field(name="/userinfo [user]", value="Get information about a user", inline=False)
     embed.add_field(name="/serverinfo", value="Get information about the server", inline=False)
     embed.add_field(name="/birthday [date]", value="Set your birthday", inline=False)
-    embed.add_field(name="/upcomingbirthdays", value="Get a list of upcoming birthdays", inline=False)
+    embed.add_field(name="/upcomingbirthdays", value="Get list of upcoming birthdays within 2 months", inline=False)
     embed.set_footer(text="Page 1/6")
     return embed
 
@@ -247,6 +249,8 @@ def get_dev_commands_embed():
         color=discord.Color.blue()
     )
     embed.add_field(name="/sourcecode", value="returns the github repository", inline=False)
+    embed.add_field(name="/restart", value="Restarts the bot", inline=False)
+    embed.add_field(name="/invite", value="returns the invite link", inline=False)
     embed.set_footer(text="Page 5/6")
     return embed
 
@@ -1078,7 +1082,7 @@ async def check_birthdays():
     except Exception as e:
         print(f"An error occurred while checking birthdays: {e}")
 
-@bot.tree.command(name="upcomingbirthdays", description="Get upcoming birthdays")
+@bot.tree.command(name="upcomingbirthdays", description="Get upcoming birthdays for the next 2 months")
 async def upcoming_birthdays(interaction: discord.Interaction):
     try:
         await interaction.response.defer()
@@ -1096,16 +1100,18 @@ async def upcoming_birthdays(interaction: discord.Interaction):
         for user_id, birthday in birthdays:
             birthday_date = dateparser.parse(birthday)
             if birthday_date:
-                upcoming_birthdays.append((user_id, birthday_date))
+                # Check if the birthday is within the next 2 months
+                if datetime.now() <= birthday_date <= datetime.now() + timedelta(days=60):
+                    upcoming_birthdays.append((user_id, birthday_date))
 
         if not upcoming_birthdays:
             await interaction.followup.send("No upcoming birthdays found.")
             return
 
         upcoming_birthdays.sort(key=lambda x: x[1])  # Sort by birthday date
-        birthday_info = "\n".join([f"<@{user_id}> - {birthday_date.strftime('%m-%d')}" for user_id, birthday_date in upcoming_birthdays])
+        birthday_info = "\n".join([f"<@{user_id}> - {birthday_date.strftime('%B %d')}" for user_id, birthday_date in upcoming_birthdays])
 
-        embed = discord.Embed(title="Upcoming birthdays", description=birthday_info, color=0x00ff00)
+        embed = Embed(title="Upcoming birthdays", description=birthday_info, color=0x00ff00)
         await interaction.followup.send(embed=embed)
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve upcoming birthdays: {e}")
@@ -1122,6 +1128,12 @@ async def sourcecode(interaction: discord.Interaction):
                   url="https://github.com/Kaydonbob03/kaydonbotv2", color=0x5CDBF0)
     await interaction.followup.send(embed=embed)
 
+@bot.tree.command(name="invite", description="Get the invite link for this bot")
+async def sourcecode(interaction: discord.Interaction):
+    await interaction.response.defer()
+    embed = discord.Embed(title="Invite Bot", description="Invite this bot to your server", 
+                  url="https://discord.com/oauth2/authorize?client_id=1181143854959837184&permissions=8&scope=bot+applications.commands", color=discord.Color.gold())
+    await interaction.followup.send(embed=embed)
 
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------------
