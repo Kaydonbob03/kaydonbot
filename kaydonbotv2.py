@@ -1086,7 +1086,6 @@ async def check_birthdays():
 @bot.tree.command(name="upcomingbirthdays", description="Get upcoming birthdays for the next 2 months")
 async def upcoming_birthdays(interaction: discord.Interaction):
     try:
-        await interaction.response.defer()
         conn = sqlite3.connect('birthdays.db')
         c = conn.cursor()
         c.execute("SELECT user_id, birthday FROM birthdays WHERE server_id = ?", (interaction.guild.id,))
@@ -1094,7 +1093,7 @@ async def upcoming_birthdays(interaction: discord.Interaction):
         conn.close()
 
         if not birthdays:
-            await interaction.followup.send("No upcoming birthdays found.")
+            await interaction.response.send_message("No upcoming birthdays found.")
             return
 
         upcoming_birthdays = []
@@ -1106,16 +1105,16 @@ async def upcoming_birthdays(interaction: discord.Interaction):
                     upcoming_birthdays.append((user_id, birthday_date))
 
         if not upcoming_birthdays:
-            await interaction.followup.send("No upcoming birthdays found.")
+            await interaction.response.send_message("No upcoming birthdays found.")
             return
 
         upcoming_birthdays.sort(key=lambda x: x[1])  # Sort by birthday date
         birthday_info = "\n".join([f"<@{user_id}> - {birthday_date.strftime('%B %d')}" for user_id, birthday_date in upcoming_birthdays])
 
         embed = Embed(title="Upcoming birthdays", description=birthday_info, color=0x00ff00)
-        await interaction.followup.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     except Exception as e:
-        await interaction.followup.send(f"Failed to retrieve upcoming birthdays: {e}")
+        await interaction.response.send_message(f"Failed to retrieve upcoming birthdays: {e}")
 
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
