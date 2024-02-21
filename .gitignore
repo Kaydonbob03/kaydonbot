@@ -17,8 +17,8 @@ authorized_users.json
 restart_bot.sh
 update_bot.sh
 
-# Ignore the Database to protect sensitive data
-birthdays.db
+# # Ignore the Database to protect sensitive data
+# birthdays.db
 
 # Ignore json file that contains slurs
 complete_words_blacklist.json
