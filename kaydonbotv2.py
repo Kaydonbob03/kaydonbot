@@ -1056,23 +1056,25 @@ async def birthday(interaction: discord.Interaction, date: str):
 @tasks.loop(hours=24)
 async def check_birthdays():
     try:
-        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        today = datetime.datetime.now().strftime('%m-%d')
 
         conn = sqlite3.connect('birthdays.db')
         c = conn.cursor()
-        c.execute("SELECT user_id, server_id FROM birthdays WHERE birthday=?", (today,))
+        c.execute("SELECT user_id, server_id, birthday FROM birthdays")
         birthdays = c.fetchall()
         conn.close()
 
-        for user_id, server_id in birthdays:
-            guild = bot.get_guild(int(server_id))
-            if guild:
-                user = guild.get_member(int(user_id))
-                if user:
-                    # Try to get the #birthdays channel, if not available then #announcements, and finally #general
-                    channel = discord.utils.get(guild.text_channels, name='birthdays') or discord.utils.get(guild.text_channels, name='announcements') or discord.utils.get(guild.text_channels, name='general')
-                    if channel:
-                        await channel.send(f"@here please wish a very happy birthday to {user.mention}. Happy Birthday !!!")
+        for user_id, server_id, birthday in birthdays:
+            # Ignore the year when comparing dates
+            if datetime.datetime.strptime(birthday, '%Y-%m-%d').strftime('%m-%d') == today:
+                guild = bot.get_guild(int(server_id))
+                if guild:
+                    user = guild.get_member(int(user_id))
+                    if user:
+                        # Try to get the #birthdays channel, if not available then #announcements, and finally #general
+                        channel = discord.utils.get(guild.text_channels, name='birthdays') or discord.utils.get(guild.text_channels, name='announcements') or discord.utils.get(guild.text_channels, name='general')
+                        if channel:
+                            await channel.send(f"@here please wish a very happy birthday to {user.mention}. Happy Birthday !!!")
     except Exception as e:
         print(f"An error occurred while checking birthdays: {e}")
 
@@ -1101,8 +1103,10 @@ async def upcoming_birthdays(interaction: discord.Interaction):
             return
 
         upcoming_birthdays.sort(key=lambda x: x[1])  # Sort by birthday date
-        birthday_info = "\n".join([f"<@{user_id}> - {birthday_date.strftime('%Y-%m-%d')}" for user_id, birthday_date in upcoming_birthdays])
-        await interaction.followup.send(f"Upcoming birthdays:\n{birthday_info}")
+        birthday_info = "\n".join([f"<@{user_id}> - {birthday_date.strftime('%m-%d')}" for user_id, birthday_date in upcoming_birthdays])
+
+        embed = discord.Embed(title="Upcoming birthdays", description=birthday_info, color=0x00ff00)
+        await interaction.followup.send(embed=embed)
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve upcoming birthdays: {e}")
 
