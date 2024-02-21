@@ -153,6 +153,35 @@ async def on_member_join(member):
         if channel:
             await channel.send(f"Welcome to the server, {member.mention}!")
 
+@tasks.loop(hours=6)
+async def check_birthdays():
+    try:
+        today = datetime.datetime.now().strftime('%m-%d')
+
+        conn = sqlite3.connect('birthdays.db')
+        c = conn.cursor()
+        c.execute("SELECT user_id, server_id, birthday FROM birthdays")
+        birthdays = c.fetchall()
+        conn.close()
+
+        for user_id, server_id, birthday in birthdays:
+            # Ignore the year when comparing dates
+            if datetime.datetime.strptime(birthday, '%Y-%m-%d').strftime('%m-%d') == today:
+                guild = bot.get_guild(int(server_id))
+                if guild:
+                    user = guild.get_member(int(user_id))
+                    if user:
+                        # Try to get the #birthdays channel, if not available then #announcements, and finally #general
+                        channel = discord.utils.get(guild.text_channels, name='birthdays') or discord.utils.get(guild.text_channels, name='announcements') or discord.utils.get(guild.text_channels, name='general')
+                        # If none of the above channels are found, send the message to the first available text channel
+                        if not channel and guild.text_channels:
+                            channel = guild.text_channels[0]
+                        if channel:
+                            await channel.send(f"@here please wish a very happy birthday to {user.mention}. Happy Birthday !!!")
+    except Exception as e:
+        print(f"An error occurred while checking birthdays: {e}")
+
+
 # -------------------------------------------------INITIALIZATION ENDS--------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 # --------------------------------------------------COMMANDS LIST-------------------------------------------------------
@@ -1032,7 +1061,7 @@ async def urban(interaction: discord.Interaction, term: str):
 conn = sqlite3.connect('birthdays.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS birthdays
-             (user_id text, server_id text, birthday text)''')
+             (user_id text, server_id text, birthday text, PRIMARY KEY(user_id, server_id))''')
 conn.commit()
 conn.close()
 
@@ -1049,7 +1078,7 @@ async def birthday(interaction: discord.Interaction, date: str):
         # Save the birthday in the database
         conn = sqlite3.connect('birthdays.db')
         c = conn.cursor()
-        c.execute("INSERT INTO birthdays VALUES (?, ?, ?)",
+        c.execute('''INSERT OR REPLACE INTO birthdays VALUES (?, ?, ?)''',
                   (interaction.user.id, interaction.guild.id, birthday_date.strftime('%Y-%m-%d')))
         conn.commit()
         conn.close()
@@ -1058,30 +1087,6 @@ async def birthday(interaction: discord.Interaction, date: str):
     except Exception as e:
         await interaction.followup.send(f"Failed to set birthday: {e}")
 
-@tasks.loop(hours=24)
-async def check_birthdays():
-    try:
-        today = datetime.datetime.now().strftime('%m-%d')
-
-        conn = sqlite3.connect('birthdays.db')
-        c = conn.cursor()
-        c.execute("SELECT user_id, server_id, birthday FROM birthdays")
-        birthdays = c.fetchall()
-        conn.close()
-
-        for user_id, server_id, birthday in birthdays:
-            # Ignore the year when comparing dates
-            if datetime.datetime.strptime(birthday, '%Y-%m-%d').strftime('%m-%d') == today:
-                guild = bot.get_guild(int(server_id))
-                if guild:
-                    user = guild.get_member(int(user_id))
-                    if user:
-                        # Try to get the #birthdays channel, if not available then #announcements, and finally #general
-                        channel = discord.utils.get(guild.text_channels, name='birthdays') or discord.utils.get(guild.text_channels, name='announcements') or discord.utils.get(guild.text_channels, name='general')
-                        if channel:
-                            await channel.send(f"@here please wish a very happy birthday to {user.mention}. Happy Birthday !!!")
-    except Exception as e:
-        print(f"An error occurred while checking birthdays: {e}")
 
 @bot.tree.command(name="upcomingbirthdays", description="Get upcoming birthdays for the next 180 days")
 async def upcoming_birthdays(interaction: discord.Interaction):
