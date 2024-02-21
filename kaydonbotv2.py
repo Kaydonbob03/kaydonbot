@@ -1146,22 +1146,22 @@ async def restart(interaction: discord.Interaction):
     # Check if the user who invoked the command is authorized
     if str(interaction.user.id) in authorized_users:
         await interaction.response.send_message("Restarting...")
-        subprocess.call(["sudo", "~/hosting/restart_bot.sh"])
+        subprocess.call(["sudo", "/home/kayden/hosting/restart_bot.sh"])
     else:
         await interaction.response.send_message("You are not authorized to use this command.")
 
-@bot.tree.command(name="update", description="Update and restart the bot")
-async def update(interaction: discord.Interaction):
-    # Load the authorized user IDs from the JSON file
-    with open("authorized_users.json", "r") as file:
-        authorized_users = json.load(file)["users"]
+    @bot.tree.command(name="update", description="Update and restart the bot")
+    async def update(interaction: discord.Interaction):
+        # Load the authorized user IDs from the JSON file
+        with open("authorized_users.json", "r") as file:
+            authorized_users = json.load(file)["users"]
 
-    # Check if the user who invoked the command is authorized
-    if str(interaction.user.id) in authorized_users:
-        await interaction.response.send_message("Updating and restarting...")
-        subprocess.call(["sudo", "/path/to/update_and_restart_bot.sh"])
-    else:
-        await interaction.response.send_message("You are not authorized to use this command.")
+        # Check if the user who invoked the command is authorized
+        if str(interaction.user.id) in authorized_users:
+            await interaction.response.send_message("Updating and restarting...")
+            subprocess.call(["sudo", "/home/kayden/hosting/update_bot.sh"])
+        else:
+            await interaction.response.send_message("You are not authorized to use this command.")
 
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------------
