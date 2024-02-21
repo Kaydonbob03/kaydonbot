@@ -9,3 +9,13 @@ hosting/suggestions/
 
 # Ignore Command Log File
 command_log.log
+
+#Ignore this file
+authorized_users.json
+
+# Ignore the bash scripts
+restart_bot.sh
+update_bot.sh
+
+# Ignore the Database to protect sensitive data
+birthdays.db
