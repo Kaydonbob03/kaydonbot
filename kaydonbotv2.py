@@ -1177,12 +1177,12 @@ async def restart(interaction: discord.Interaction, ephemeral=True):
     # Check if the user who invoked the command is authorized
     if str(interaction.user.id) in authorized_users:
         await interaction.response.send_message("Restarting...")
-        subprocess.call(["sudo", "/home/kayden/hosting/restart_bot.sh"])
+        subprocess.Popen(["sudo", "/home/kayden/hosting/restart_bot.sh"])
     else:
         await interaction.response.send_message("You are not authorized to use this command.")
 
-    @bot.tree.command(name="update", description="Update and restart the bot")
-    async def bot_update(interaction: discord.Interaction, ephemeral=True):
+    @bot.tree.command(name="botupdate", description="Update and restart the bot")
+    async def updater(interaction: discord.Interaction, ephemeral=True):
         # Load the authorized user IDs from the JSON file
         with open("authorized_users.json", "r") as file:
             authorized_users = json.load(file)["users"]
@@ -1190,7 +1190,7 @@ async def restart(interaction: discord.Interaction, ephemeral=True):
         # Check if the user who invoked the command is authorized
         if str(interaction.user.id) in authorized_users:
             await interaction.response.send_message("Updating and restarting...")
-            subprocess.call(["sudo", "/home/kayden/hosting/update_bot.sh"])
+            subprocess.Popen(["sudo", "/home/kayden/hosting/update_bot.sh"])
         else:
             await interaction.response.send_message("You are not authorized to use this command.")
 
