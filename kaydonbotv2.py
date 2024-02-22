@@ -1169,7 +1169,7 @@ async def sourcecode(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="restart", description="Restart the bot")
-async def restart(interaction: discord.Interaction, empheral=True):
+async def restart(interaction: discord.Interaction, ephemeral=True):
     # Load the authorized user IDs from the JSON file
     with open("authorized_users.json", "r") as file:
         authorized_users = json.load(file)["users"]
@@ -1182,7 +1182,7 @@ async def restart(interaction: discord.Interaction, empheral=True):
         await interaction.response.send_message("You are not authorized to use this command.")
 
     @bot.tree.command(name="update", description="Update and restart the bot")
-    async def bot_update(interaction: discord.Interaction, empheral=True):
+    async def bot_update(interaction: discord.Interaction, ephemeral=True):
         # Load the authorized user IDs from the JSON file
         with open("authorized_users.json", "r") as file:
             authorized_users = json.load(file)["users"]
