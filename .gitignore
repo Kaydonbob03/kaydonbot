@@ -7,18 +7,5 @@ nohup.out
 # Ignore weird second instance of this folder
 hosting/suggestions/
 
-# Ignore Command Log File
-command_log.log
-
-#Ignore this file
-authorized_users.json
-
-# Ignore the bash scripts
-restart_bot.sh
-update_bot.sh
-
-# Ignore the Database to protect sensitive data
+# Ignore the birthdays.db to protect privacy
 birthdays.db
-
-# Ignore json file that contains slurs
-complete_words_blacklist.json
