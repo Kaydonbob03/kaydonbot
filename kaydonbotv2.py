@@ -1169,7 +1169,7 @@ async def sourcecode(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="restart", description="Restart the bot")
-async def restart(interaction: discord.Interaction, ephemeral=True):
+async def restart(interaction: discord.Interaction, ephemeral: bool=True):
     # Load the authorized user IDs from the JSON file
     with open("authorized_users.json", "r") as file:
         authorized_users = json.load(file)["users"]
@@ -1181,18 +1181,18 @@ async def restart(interaction: discord.Interaction, ephemeral=True):
     else:
         await interaction.response.send_message("You are not authorized to use this command.")
 
-    @bot.tree.command(name="botupdate", description="Update and restart the bot")
-    async def updater(interaction: discord.Interaction, ephemeral=True):
-        # Load the authorized user IDs from the JSON file
-        with open("authorized_users.json", "r") as file:
-            authorized_users = json.load(file)["users"]
+@bot.tree.command(name="botupdate", description="Update and restart the bot")
+async def updater(interaction: discord.Interaction, ephemeral: bool=True):
+    # Load the authorized user IDs from the JSON file
+    with open("authorized_users.json", "r") as file:
+        authorized_users = json.load(file)["users"]
 
-        # Check if the user who invoked the command is authorized
-        if str(interaction.user.id) in authorized_users:
-            await interaction.response.send_message("Updating and restarting...")
-            subprocess.Popen(["sudo", "/home/kayden/hosting/update_bot.sh"])
-        else:
-            await interaction.response.send_message("You are not authorized to use this command.")
+    # Check if the user who invoked the command is authorized
+    if str(interaction.user.id) in authorized_users:
+        await interaction.response.send_message("Updating and restarting...")
+        subprocess.Popen(["sudo", "/home/kayden/hosting/update_bot.sh"])
+    else:
+        await interaction.response.send_message("You are not authorized to use this command.")
 
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------------
