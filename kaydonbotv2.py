@@ -244,6 +244,8 @@ def get_general_commands_embed():
     embed.add_field(name="/serverinfo", value="Get information about the server", inline=False)
     embed.add_field(name="/birthday [date]", value="Set your birthday", inline=False)
     embed.add_field(name="/upcomingbirthdays", value="Get list of upcoming birthdays within 180 days", inline=False)
+    embed.add_field(name="/deletebirthday", value="Delete your birthday", inline=False)
+    embed.add_field(name="/birthdaylist", value="Get list of all birthdays", inline=False)
     embed.set_footer(text="Page 1/6")
     return embed
 
@@ -302,8 +304,13 @@ def get_dev_commands_embed():
         color=discord.Color.blue()
     )
     embed.add_field(name="/sourcecode", value="returns the github repository", inline=False)
-    embed.add_field(name="/restart", value="Restarts the bot", inline=False)
     embed.add_field(name="/invite", value="returns the invite link", inline=False)
+    embed.add_field(name="/ping", value="gets the bots current ping", inline=False)
+    embed.add_field(name="/uptime", value="gets the bots current uptime", inline=False)
+    embed.add_field(name="/leaveguild", value="Leaves the current server -authorized users only", inline=False)
+    embed.add_field(name="/restart", value="Restarts the bot - authorized users only", inline=False)
+    embed.add_field(name="/shutdown", value="Shuts down the bot - authorized users only", inline=False)
+    embed.add_field(name="/update", value="Updates the bot - authorized users only", inline=False)
     embed.set_footer(text="Page 5/6")
     return embed
 
@@ -1149,6 +1156,61 @@ async def upcoming_birthdays(interaction: discord.Interaction):
         await interaction.response.send_message(f"Failed to retrieve upcoming birthdays: {e}")
 
 
+@bot.tree.command(name="deletebirthday", description="Delete your birthday")
+async def delete_birthday(interaction: discord.Interaction):
+    try:
+        conn = sqlite3.connect('birthdays.db')
+        c = conn.cursor()
+        c.execute("DELETE FROM birthdays WHERE user_id = ? AND server_id = ?", (interaction.user.id, interaction.guild.id))
+        conn.commit()
+        conn.close()
+
+        await interaction.response.send_message("Your birthday has been deleted.")
+    except Exception as e:
+        await interaction.response.send_message(f"Failed to delete birthday: {e}")
+
+@bot.tree.command(name="birthdayinfo", description="Get the birthday of a user")
+async def birthday_info(interaction: discord.Interaction, user: discord.User):
+    try:
+        conn = sqlite3.connect('birthdays.db')
+        c = conn.cursor()
+        c.execute("SELECT birthday FROM birthdays WHERE user_id = ? AND server_id = ?", (user.id, interaction.guild.id))
+        birthday = c.fetchone()
+        conn.close()
+
+        if not birthday:
+            await interaction.response.send_message("No birthday found for the user.")
+            return
+
+        birthday_date = dateparser.parse(birthday[0])
+        if not birthday_date:
+            await interaction.response.send_message("Invalid date format.")
+            return
+
+        await interaction.response.send_message(f"{user.mention}'s birthday is: {birthday_date.strftime('%Y-%m-%d')}")
+    except Exception as e:
+        await interaction.response.send_message(f"Failed to retrieve birthday: {e}")
+
+@bot.tree.command(name="birthdayslist", description="See all birthdays")
+async def birthdays_all(interaction: discord.Interaction):
+    try:
+        conn = sqlite3.connect('birthdays.db')
+        c = conn.cursor()
+        c.execute("SELECT user_id, birthday FROM birthdays WHERE server_id = ?", (interaction.guild.id,))
+        birthdays = c.fetchall()
+        conn.close()
+
+        if not birthdays:
+            await interaction.response.send_message("No birthdays found.")
+            return
+
+        birthday_info = "\n".join([f"<@{user_id}> - {dateparser.parse(birthday).strftime('%Y-%m-%d')}" for user_id, birthday in birthdays])
+        embed = discord.Embed(title="Birthdays", description=birthday_info, color=discord.Color.gold())
+        await interaction.response.send_message(embed=embed)
+
+    except Exception as e:
+        await interaction.response.send_message(f"Failed to retrieve birthdays: {e}")
+
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------DEV COMMANDS---------------------------------------------------------
@@ -1193,6 +1255,60 @@ async def updater(interaction: discord.Interaction):
         subprocess.Popen(["sudo", "/home/kayden/hosting/update_bot.sh"])
     else:
         await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+
+@bot.tree.command(name="ping", description="Get the bot's latency")
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message(f"Pong! {round(bot.latency * 1000)}ms")
+
+@bot.tree.command(name="uptime", description="Get the bot's uptime")
+async def uptime(interaction: discord.Interaction):
+    uptime = datetime.now() - bot.start_time
+    await interaction.response.send_message(f"Uptime: {uptime}")
+
+@bot.tree.command(name="shutdown", description="Shutdown the bot")
+async def shutdown(interaction: discord.Interaction):
+    # Load the authorized user IDs from the JSON file
+    with open("authorized_users.json", "r") as file:
+        authorized_users = json.load(file)["users"]
+
+    # Check if the user who invoked the command is authorized
+    if str(interaction.user.id) in authorized_users:
+        await interaction.response.send_message("Shutting down...", ephemeral=True)
+        await bot.close()
+    else:
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+
+@bot.tree.command(name="leaveguild", description="Leave a guild")
+async def leave_guild(interaction: discord.Interaction, guild_id: int):
+    # Load the authorized user IDs from the JSON file
+    with open("authorized_users.json", "r") as file:
+        authorized_users = json.load(file)["users"]
+
+    # Check if the user who invoked the command is authorized
+    if str(interaction.user.id) in authorized_users:
+        guild = bot.get_guild(guild_id)
+        if guild:
+            await guild.leave()
+            await interaction.response.send_message(f"Left guild: {guild_id}", ephemeral=True)
+        else:
+            await interaction.response.send_message("Guild not found.", ephemeral=True)
+    else:
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+
+@bot.tree.command(name="listguilds", description="List all guilds the bot is in")
+async def list_guilds(interaction: discord.Interaction):
+    # Load the authorized user IDs from the JSON file
+    with open("authorized_users.json", "r") as file:
+        authorized_users = json.load(file)["users"]
+
+    # Check if the user who invoked the command is authorized
+    if str(interaction.user.id) in authorized_users:
+        guilds = [guild.name for guild in bot.guilds]
+        await interaction.response.send_message(f"Guilds: {', '.join(guilds)}")
+    else:
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+
+
 
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------------
