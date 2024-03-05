@@ -749,6 +749,135 @@ async def hardban(interaction: discord.Interaction):
         await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
 
 
+# Create a new SQLite database and table if they don't already exist
+conn = sqlite3.connect('reaction_roles.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS reaction_roles
+             (message_id text, role_id text, emoji text, PRIMARY KEY(message_id, role_id))''')
+conn.commit()
+conn.close()
+
+@bot.tree.command(name="reactionrole", description="Start the setup sequence for setting up a reaction role embed message")
+@is_admin_or_mod()
+async def reaction_role_setup(ctx):
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel
+
+    await ctx.send("Please mention the channel where the reaction role message should be sent.")
+    channel_message = await bot.wait_for('message', check=check)
+    channel = await commands.TextChannelConverter().convert(ctx, channel_message.content)
+
+    await ctx.send("Please specify the role and the corresponding emoji in the format `@role :emoji:`. Send `done` when you're finished.")
+    role_emoji_pairs = []
+    while True:
+        role_emoji_message = await bot.wait_for('message', check=check)
+        if role_emoji_message.content.lower() == 'done':
+            break
+        role, emoji = role_emoji_message.content.split()
+        role = await commands.RoleConverter().convert(ctx, role)
+        role_emoji_pairs.append((role, emoji))
+
+    embed = discord.Embed(title="Reaction Roles", description="React to get a role!")
+    for role, emoji in role_emoji_pairs:
+        embed.add_field(name=role.name, value=f"React with {emoji} to get this role.", inline=False)
+    msg = await channel.send(embed=embed)
+    for role, emoji in role_emoji_pairs:
+        await msg.add_reaction(emoji)
+
+    # Store the message ID, role ID, and emoji in the database
+    conn = sqlite3.connect('reaction_roles.db')
+    c = conn.cursor()
+    for role, emoji in role_emoji_pairs:
+        c.execute('''INSERT OR REPLACE INTO reaction_roles VALUES (?, ?, ?)''',
+                  (msg.id, role.id, emoji))
+    conn.commit()
+    conn.close()
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    # Connect to the database
+    conn = sqlite3.connect('reaction_roles.db')
+    c = conn.cursor()
+
+    # Query the database for an entry matching the message ID and emoji
+    c.execute('''SELECT role_id FROM reaction_roles WHERE message_id = ? AND emoji = ?''',
+              (payload.message_id, str(payload.emoji)))
+    result = c.fetchone()
+
+    # If an entry was found, assign the role to the user
+    if result is not None:
+        guild = bot.get_guild(payload.guild_id)
+        if guild is None:
+            print(f"Guild not found for ID {payload.guild_id}")
+            return
+
+        role = guild.get_role(int(result[0]))
+        if role is None:
+            print(f"Role not found for ID {result[0]}")
+            return
+
+        user = guild.get_member(payload.user_id)
+        if user is None:
+            print(f"User not found for ID {payload.user_id}")
+            return
+
+        # Check if the user already has the role
+        if role in user.roles:
+            print(f"User {user.id} already has role {role.id}")
+            return
+
+        try:
+            await user.add_roles(role)
+        except discord.Forbidden:
+            print(f"Bot does not have permission to add role {role.id} to user {user.id}")
+        except discord.HTTPException as e:
+            print(f"Failed to add role: {e}")
+
+    # Close the database connection
+    conn.close()
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    # Connect to the database
+    conn = sqlite3.connect('reaction_roles.db')
+    c = conn.cursor()
+
+    # Query the database for an entry matching the message ID and emoji
+    c.execute('''SELECT role_id FROM reaction_roles WHERE message_id = ? AND emoji = ?''',
+              (payload.message_id, str(payload.emoji)))
+    result = c.fetchone()
+
+    # If an entry was found, remove the role from the user
+    if result is not None:
+        guild = bot.get_guild(payload.guild_id)
+        if guild is None:
+            print(f"Guild not found for ID {payload.guild_id}")
+            return
+
+        role = guild.get_role(int(result[0]))
+        if role is None:
+            print(f"Role not found for ID {result[0]}")
+            return
+
+        user = guild.get_member(payload.user_id)
+        if user is None:
+            print(f"User not found for ID {payload.user_id}")
+            return
+
+        # Check if the user has the role
+        if role not in user.roles:
+            print(f"User {user.id} does not have role {role.id}")
+            return
+
+        try:
+            await user.remove_roles(role)
+        except discord.Forbidden:
+            print(f"Bot does not have permission to remove role {role.id} from user {user.id}")
+        except discord.HTTPException as e:
+            print(f"Failed to remove role: {e}")
+
+    # Close the database connection
+    conn.close()
 
 
 
