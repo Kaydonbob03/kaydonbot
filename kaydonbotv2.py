@@ -763,11 +763,11 @@ async def reaction_role_setup(ctx):
     def check(m):
         return m.author == ctx.author and m.channel == ctx.channel
 
-    await ctx.send("Please mention the channel where the reaction role message should be sent.")
+    await ctx.response.send_message("Please mention the channel where the reaction role message should be sent.")
     channel_message = await bot.wait_for('message', check=check)
     channel = await commands.TextChannelConverter().convert(ctx, channel_message.content)
 
-    await ctx.send("Please specify the role and the corresponding emoji in the format `@role :emoji:`. Send `done` when you're finished.")
+    await ctx.response.send_message("Please specify the role and the corresponding emoji in the format `@role :emoji:`. Send `done` when you're finished.")
     role_emoji_pairs = []
     while True:
         role_emoji_message = await bot.wait_for('message', check=check)
