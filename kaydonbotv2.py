@@ -74,6 +74,8 @@ async def on_ready():
     print('Kaydonbot  Copyright (C) 2024  Kayden Cormier -- K-GamesMedia')
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
+    bot.start_time = datetime.now()
+    print(f"We have logged in as {bot.user}")
     change_status.start()
     print('------')
     
