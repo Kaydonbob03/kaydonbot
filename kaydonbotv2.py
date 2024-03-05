@@ -772,7 +772,7 @@ async def reaction_role_setup(interaction):
         channel_message = await interaction.client.wait_for('message', check=check)
         channel = await TextChannelConverter().convert(interaction, channel_message.content)
 
-        await interaction.response.send_message("Please specify the role and the corresponding emoji in the format `@role :emoji:`. Send `done` when you're finished.")
+        await interaction.followup.send("Please specify the role and the corresponding emoji in the format `@role :emoji:`. Send `done` when you're finished.")
         role_emoji_pairs = []
         while True:
             role_emoji_message = await interaction.client.wait_for('message', check=check)
@@ -789,7 +789,7 @@ async def reaction_role_setup(interaction):
         for role, emoji in role_emoji_pairs:
             await msg.add_reaction(emoji)
     except Exception as e:
-        await interaction.response.send_message(f"An error occurred: {e}")
+        await interaction.followup.send(f"An error occurred: {e}")
 
     # Store the message ID, role ID, and emoji in the database
     conn = sqlite3.connect('reaction_roles.db')
