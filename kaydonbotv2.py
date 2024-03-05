@@ -761,18 +761,13 @@ conn.close()
 
 @bot.tree.command(name="reactionrole", description="Start the setup sequence for setting up a reaction role embed message")
 @is_admin_or_mod()
-async def reaction_role_setup(ctx):
+async def reaction_role_setup(interaction):
     def check(m):
-        return m.author.id == ctx.user.id and m.channel.id == ctx.channel.id
+        return m.author.id == interaction.user.id and m.channel.id == interaction.channel.id
 
-    await ctx.response.send_message("Please mention the channel where the reaction role message should be sent.")
-    channel_message = await bot.wait_for('message', check=check)
-    channel = await TextChannelConverter().convert(ctx, channel_message.content)
-
-
-    await ctx.response.send_message("Please mention the channel where the reaction role message should be sent.")
-    channel_message = await bot.wait_for('message', check=check)
-    channel = await commands.TextChannelConverter().convert(ctx, channel_message.content)
+    await interaction.response.send_message("Please mention the channel where the reaction role message should be sent.")
+    channel_message = await interaction.client.wait_for('message', check=check)
+    channel = await TextChannelConverter().convert(interaction, channel_message.content)
 
     await ctx.response.send_message("Please specify the role and the corresponding emoji in the format `@role :emoji:`. Send `done` when you're finished.")
     role_emoji_pairs = []
