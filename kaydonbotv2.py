@@ -762,29 +762,32 @@ conn.close()
 @bot.tree.command(name="reactionrole", description="Start the setup sequence for setting up a reaction role embed message")
 @is_admin_or_mod()
 async def reaction_role_setup(interaction):
-    def check(m):
-        return m.author.id == interaction.user.id and m.channel.id == interaction.channel.id
+    try:
+        def check(m):
+            return m.author.id == interaction.user.id and m.channel.id == interaction.channel.id
 
-    await interaction.response.send_message("Please mention the channel where the reaction role message should be sent.")
-    channel_message = await interaction.client.wait_for('message', check=check)
-    channel = await TextChannelConverter().convert(interaction, channel_message.content)
+        await interaction.response.send_message("Please mention the channel where the reaction role message should be sent.")
+        channel_message = await interaction.client.wait_for('message', check=check)
+        channel = await TextChannelConverter().convert(interaction, channel_message.content)
 
-    await ctx.response.send_message("Please specify the role and the corresponding emoji in the format `@role :emoji:`. Send `done` when you're finished.")
-    role_emoji_pairs = []
-    while True:
-        role_emoji_message = await bot.wait_for('message', check=check)
-        if role_emoji_message.content.lower() == 'done':
-            break
-        role, emoji = role_emoji_message.content.split()
-        role = await commands.RoleConverter().convert(ctx, role)
-        role_emoji_pairs.append((role, emoji))
+        await interaction.response.send_message("Please specify the role and the corresponding emoji in the format `@role :emoji:`. Send `done` when you're finished.")
+        role_emoji_pairs = []
+        while True:
+            role_emoji_message = await interaction.client.wait_for('message', check=check)
+            if role_emoji_message.content.lower() == 'done':
+                break
+            role, emoji = role_emoji_message.content.split()
+            role = await commands.RoleConverter().convert(interaction, role)
+            role_emoji_pairs.append((role, emoji))
 
-    embed = discord.Embed(title="Reaction Roles", description="React to get a role!")
-    for role, emoji in role_emoji_pairs:
-        embed.add_field(name=role.name, value=f"React with {emoji} to get this role.", inline=False)
-    msg = await channel.send(embed=embed)
-    for role, emoji in role_emoji_pairs:
-        await msg.add_reaction(emoji)
+        embed = discord.Embed(title="Reaction Roles", description="React to get a role!")
+        for role, emoji in role_emoji_pairs:
+            embed.add_field(name=role.name, value=f"React with {emoji} to get this role.", inline=False)
+        msg = await channel.send(embed=embed)
+        for role, emoji in role_emoji_pairs:
+            await msg.add_reaction(emoji)
+    except Exception as e:
+        await interaction.response.send_message(f"An error occurred: {e}")
 
     # Store the message ID, role ID, and emoji in the database
     conn = sqlite3.connect('reaction_roles.db')
