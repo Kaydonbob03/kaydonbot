@@ -310,7 +310,7 @@ def get_dev_commands_embed():
     embed.add_field(name="/leaveguild", value="Leaves the current server -authorized users only", inline=False)
     embed.add_field(name="/restart", value="Restarts the bot - authorized users only", inline=False)
     embed.add_field(name="/shutdown", value="Shuts down the bot - authorized users only", inline=False)
-    embed.add_field(name="/update", value="Updates the bot - authorized users only", inline=False)
+    embed.add_field(name="/botupdate", value="Updates the bot - authorized users only", inline=False)
     embed.set_footer(text="Page 5/6")
     return embed
 
