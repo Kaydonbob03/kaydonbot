@@ -13,6 +13,7 @@ import sys
 import subprocess
 from datetime import datetime, timedelta
 from langdetect import detect, LangDetectException
+from discord.ext.commands import TextChannelConverter
 from discord.ext import commands, tasks
 from discord import app_commands
 from openai import OpenAI
@@ -757,11 +758,16 @@ c.execute('''CREATE TABLE IF NOT EXISTS reaction_roles
 conn.commit()
 conn.close()
 
+
 @bot.tree.command(name="reactionrole", description="Start the setup sequence for setting up a reaction role embed message")
 @is_admin_or_mod()
 async def reaction_role_setup(ctx):
     def check(m):
         return m.author.id == ctx.user.id and m.channel.id == ctx.channel.id
+
+    await ctx.response.send_message("Please mention the channel where the reaction role message should be sent.")
+    channel_message = await bot.wait_for('message', check=check)
+    channel = await TextChannelConverter().convert(ctx, channel_message.content)
 
 
     await ctx.response.send_message("Please mention the channel where the reaction role message should be sent.")
