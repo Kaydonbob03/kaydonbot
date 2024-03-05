@@ -761,7 +761,8 @@ conn.close()
 @is_admin_or_mod()
 async def reaction_role_setup(ctx):
     def check(m):
-        return m.author == ctx.author and m.channel == ctx.channel
+        return m.author.id == ctx.user.id and m.channel.id == ctx.channel.id
+
 
     await ctx.response.send_message("Please mention the channel where the reaction role message should be sent.")
     channel_message = await bot.wait_for('message', check=check)
