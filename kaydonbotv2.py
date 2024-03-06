@@ -1496,10 +1496,10 @@ async def bot_info(interaction: discord.Interaction):
     embed = discord.Embed(title="Bot Info")
 
     # Add fields to the embed
-    embed.add_field(name="Bot Name", value=interaction.bot.user.name, inline=False)
-    embed.add_field(name="Bot ID", value=interaction.bot.user.id, inline=False)
+    embed.add_field(name="Bot Name", value=interaction.client.user.name, inline=False)
+    embed.add_field(name="Bot ID", value=interaction.client.user.id, inline=False)
     embed.add_field(name="Bot Version", value="6.0.1", inline=False)  
-    embed.add_field(name="Servers", value=len(interaction.bot.guilds), inline=False)
+    embed.add_field(name="Servers", value=len(interaction.client.guilds), inline=False)
 
     # Send the embed
     await interaction.response.send_message(embed=embed)
