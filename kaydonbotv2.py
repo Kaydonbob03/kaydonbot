@@ -1498,7 +1498,13 @@ async def bot_info(interaction: discord.Interaction):
     # Add fields to the embed
     embed.add_field(name="Bot Name", value=interaction.client.user.name, inline=False)
     embed.add_field(name="Bot ID", value=interaction.client.user.id, inline=False)
-    embed.add_field(name="Bot Version", value="6.0.1", inline=False)  
+
+    # Fetch the latest release version from GitHub
+    response = requests.get("https://api.github.com/repos/kaydonbob03/kaydonbot/releases/latest")
+    data = response.json()
+    latest_version = data["tag_name"]
+
+    embed.add_field(name="Bot Version", value=latest_version, inline=False)
     embed.add_field(name="Servers", value=len(interaction.client.guilds), inline=False)
 
     # Send the embed
