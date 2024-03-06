@@ -1358,7 +1358,7 @@ async def birthdays_all(interaction: discord.Interaction):
 async def sourcecode(interaction: discord.Interaction):
     await interaction.response.defer()
     embed = discord.Embed(title="Source Code", description="Get the source code for this bot", 
-                  url="https://github.com/Kaydonbob03/kaydonbotv2", color=0x5CDBF0)
+                  url="https://github.com/Kaydonbob03/kaydonbot", color=0x5CDBF0)
     await interaction.followup.send(embed=embed)
 
 @bot.tree.command(name="invite", description="Get the invite link for this bot")
@@ -1498,7 +1498,7 @@ async def bot_info(interaction: discord.Interaction):
     # Add fields to the embed
     embed.add_field(name="Bot Name", value=interaction.bot.user.name, inline=False)
     embed.add_field(name="Bot ID", value=interaction.bot.user.id, inline=False)
-    embed.add_field(name="Bot Version", value="1.0.0", inline=False)  # Replace with your bot's version
+    embed.add_field(name="Bot Version", value="6.0.1", inline=False)  
     embed.add_field(name="Servers", value=len(interaction.bot.guilds), inline=False)
 
     # Send the embed
