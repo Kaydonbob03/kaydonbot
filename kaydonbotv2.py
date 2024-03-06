@@ -314,6 +314,9 @@ def get_dev_commands_embed():
     embed.add_field(name="/restart", value="Restarts the bot - authorized users only", inline=False)
     embed.add_field(name="/shutdown", value="Shuts down the bot - authorized users only", inline=False)
     embed.add_field(name="/botupdate", value="Updates the bot - authorized users only", inline=False)
+    embed.add_field(name="/botinfo", value="Gets the bots current info", inline=False)
+    embed.add_field(name="/openticket", value="Opens a ticket for support", inline=False)
+    embed.add_field(name="/closeticket", value="Closes a ticket (Only Admins/Mods can close tickets)", inline=False)
     embed.set_footer(text="Page 5/6")
     return embed
 
@@ -1274,7 +1277,7 @@ async def upcoming_birthdays(interaction: discord.Interaction):
                 # Adjust the year of the birthday to this year for comparison
                 birthday_date = birthday_date.replace(year=datetime.now().year)
 
-                # Check if the birthday is within the next 2 months
+                # Check if the birthday is within the next 180 days
                 if datetime.now() <= birthday_date <= datetime.now() + timedelta(days=180):
                     upcoming_birthdays.append((user_id, birthday_date))
 
@@ -1444,6 +1447,62 @@ async def list_guilds(interaction: discord.Interaction):
     else:
         await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
 
+@bot.tree.command(name="openticket", description="Open a support ticket")
+async def open_ticket(interaction: discord.Interaction):
+    # Get the user who invoked the command
+    user = interaction.user
+    
+    # Get the ticket category or create it if it doesn't exist
+    category = discord.utils.get(interaction.guild.categories, name="tickets")
+    if not category:
+        category = await interaction.guild.create_category("tickets")
+    
+    # Generate the ticket channel name
+    ticket_number = len(category.channels) + 1
+    channel_name = f"{user.name}-ticket-{ticket_number}"
+    
+    # Create the ticket channel
+    ticket_channel = await category.create_text_channel(channel_name)
+    
+    # Set permissions for the user and admins
+    overwrites = {
+        interaction.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+        interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+    }
+    await ticket_channel.edit(overwrites=overwrites)
+    
+    # Send a confirmation message
+    await interaction.response.send_message(f"Ticket channel {ticket_channel.mention} has been created for you.", ephemeral=True)
+
+@bot.tree.command(name="closeticket", description="Close a support ticket")
+@is_admin_or_mod()
+async def close_ticket(interaction: discord.Interaction, channel: discord.TextChannel):
+    # Check if the channel is a ticket channel
+    if not channel.category or channel.category.name != "tickets":
+        await interaction.response.send_message("This command can only be used on ticket channels.", ephemeral=True)
+        return
+
+    # Delete the ticket channel
+    await channel.delete()
+
+    # Send a confirmation message
+    await interaction.response.send_message(f"Ticket channel {channel.name} has been closed.", ephemeral=True)
+
+
+@bot.tree.command(name="botinfo", description="Gets the bot's current info")
+async def bot_info(interaction: discord.Interaction):
+    # Create the embed
+    embed = discord.Embed(title="Bot Info")
+
+    # Add fields to the embed
+    embed.add_field(name="Bot Name", value=interaction.bot.user.name, inline=False)
+    embed.add_field(name="Bot ID", value=interaction.bot.user.id, inline=False)
+    embed.add_field(name="Bot Version", value="1.0.0", inline=False)  # Replace with your bot's version
+    embed.add_field(name="Servers", value=len(interaction.bot.guilds), inline=False)
+
+    # Send the embed
+    await interaction.response.send_message(embed=embed)
 
 
 # ---------------------------------------------------DEV COMMANDS ENDS-------------------------------------------------------
