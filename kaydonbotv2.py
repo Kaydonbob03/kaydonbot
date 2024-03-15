@@ -89,8 +89,13 @@ async def change_status():
     statuses = [
         discord.Activity(type=discord.ActivityType.watching, name="/commands"),
         discord.Game(f"in {num_servers} servers"),
-        discord.Activity(type=discord.ActivityType.watching, name="twitch.tv/kaydonbob03")
+        discord.Activity(type=discord.ActivityType.watching, name="twitch.tv/kaydonbob03"),
+        discord.Game("with code"),
+        discord.Game("with the API"),
+        discord.Game("with the database"),
+        discord.Activity(type=discord.ActivityType.watching, name="kaydonbot.xyz")
     ]
+    
     # Choose a random status and set it
     current_status = random.choice(statuses) 
     await bot.change_presence(activity=current_status)
