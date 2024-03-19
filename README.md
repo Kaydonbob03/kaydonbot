@@ -39,14 +39,6 @@ You can find more information about the bot on our [website](https://kaydonbot.x
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/kaydonbob03/Kaydonbot.git
-
-## Working With The Code
-
-### Installation
-
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/kaydonbob03/Kaydonbot.git
    ```
 2. **Navigate to the Bot Directory**:
    ```bash
