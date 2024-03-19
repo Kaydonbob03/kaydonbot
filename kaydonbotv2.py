@@ -396,6 +396,25 @@ async def wyrsuggestion(interaction: discord.Interaction, suggestion: str):
 # ---------------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------MOD-ONLY COMMANDS-------------------------------------------------------
 
+# Dictionary to store the last command timestamp for each user in each server
+last_command_time = {}
+
+# Function to check if the user is rate limited
+def is_rate_limited(guild_id, user_id):
+    current_time = time.time()
+    if guild_id in last_command_time:
+        if user_id in last_command_time[guild_id]:
+            last_time = last_command_time[guild_id][user_id]
+            if current_time - last_time < 30:  # 30 seconds rate limit
+                return True
+    return False
+
+# Function to update the last command timestamp for a user
+def update_last_command(guild_id, user_id):
+    if guild_id not in last_command_time:
+        last_command_time[guild_id] = {}
+    last_command_time[guild_id][user_id] = time.time()
+
 # Check if user is admin/mod
 def is_admin_or_mod():
     async def predicate(interaction: discord.Interaction):
@@ -498,12 +517,16 @@ async def on_message(message):
 
 #****************************WELCOME MESSAGE ENDS****************************
 
-# Define a slash command for 'msgclear'
 @bot.tree.command(name="msgclear", description="Clear a specified number of messages in a channel")
 @is_admin_or_mod()
 async def msgclear(interaction: discord.Interaction, channel: discord.TextChannel, number: int):
     try:
         await interaction.response.defer()
+        guild_id = interaction.guild_id
+        user_id = interaction.user.id
+        if is_rate_limited(guild_id, user_id):
+            await interaction.followup.send("You are being rate limited. Please wait before issuing another command.", ephemeral=True)
+            return
 
         if number < 1 or number > 100:
             await interaction.followup.send("Please specify a number between 1 and 100.")
@@ -523,6 +546,7 @@ async def msgclear(interaction: discord.Interaction, channel: discord.TextChanne
         confirmation_message = await interaction.followup.send(f"Cleared {deleted_count} messages in {channel.mention}.")
         await asyncio.sleep(5)  # Wait for 5 seconds
         await confirmation_message.delete()
+        update_last_command(guild_id, user_id)  # Update the last command timestamp
     except Exception as e:
         await interaction.followup.send(f"Failed to clear messages: {e}")
 
@@ -532,9 +556,15 @@ async def msgclear(interaction: discord.Interaction, channel: discord.TextChanne
 async def warn(interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided"):
     try:
         await interaction.response.defer()
-        # Send a DM to the member with the warning
+        guild_id = interaction.guild_id
+        user_id = member.id
+        if is_rate_limited(guild_id, user_id):
+            await interaction.followup.send("You are being rate limited. Please wait before issuing another command.", ephemeral=True)
+            return
+
         await member.send(f"You have been warned for: {reason}")
         await interaction.followup.send(f"{member.mention} has been warned for: {reason}")
+        update_last_command(guild_id, user_id)  # Update the last command timestamp
     except Exception as e:
         await interaction.followup.send(f"Failed to warn member: {e}")
 
@@ -543,8 +573,15 @@ async def warn(interaction: discord.Interaction, member: discord.Member, reason:
 async def kick(interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided"):
     try:
         await interaction.response.defer()
+        guild_id = interaction.guild_id
+        user_id = member.id
+        if is_rate_limited(guild_id, user_id):
+            await interaction.followup.send("You are being rate limited. Please wait before issuing another command.", ephemeral=True)
+            return
+
         await member.kick(reason=reason)
         await interaction.followup.send(f"{member.mention} has been kicked for: {reason}")
+        update_last_command(guild_id, user_id)  # Update the last command timestamp
     except Exception as e:
         await interaction.followup.send(f"Failed to kick member: {e}")
 
@@ -553,18 +590,29 @@ async def kick(interaction: discord.Interaction, member: discord.Member, reason:
 async def ban(interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided"):
     try:
         await interaction.response.defer()
+        guild_id = interaction.guild_id
+        user_id = member.id
+        if is_rate_limited(guild_id, user_id):
+            await interaction.followup.send("You are being rate limited. Please wait before issuing another command.", ephemeral=True)
+            return
+
         await member.ban(reason=reason)
         await interaction.followup.send(f"{member.mention} has been banned for: {reason}")
+        update_last_command(guild_id, user_id)  # Update the last command timestamp
     except Exception as e:
         await interaction.followup.send(f"Failed to ban member: {e}")
-
-import asyncio
 
 @bot.tree.command(name="mute", description="Mute a member")
 @is_admin_or_mod()
 async def mute(interaction: discord.Interaction, member: discord.Member, duration: int, reason: str = "No reason provided"):
     try:
         await interaction.response.defer()
+        guild_id = interaction.guild_id
+        user_id = member.id
+        if is_rate_limited(guild_id, user_id):
+            await interaction.followup.send("You are being rate limited. Please wait before issuing another command.", ephemeral=True)
+            return
+
         muted_role = discord.utils.get(member.guild.roles, name="Muted")
         if not muted_role:
             await interaction.followup.send("Muted role not found.")
@@ -577,6 +625,7 @@ async def mute(interaction: discord.Interaction, member: discord.Member, duratio
         if muted_role in member.roles:
             await member.remove_roles(muted_role, reason="Mute duration expired")
             await interaction.followup.send(f"{member.mention} has been unmuted.")
+        update_last_command(guild_id, user_id)  # Update the last command timestamp
     except Exception as e:
         await interaction.followup.send(f"Failed to mute member: {e}")
 
