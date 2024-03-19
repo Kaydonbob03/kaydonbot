@@ -11,6 +11,7 @@ import aiohttp
 import sqlite3
 import sys
 import subprocess
+import psutil
 from datetime import datetime, timedelta
 from langdetect import detect, LangDetectException
 from discord.ext.commands import TextChannelConverter
@@ -63,6 +64,10 @@ welcome_channels = {}
 # Global dictionary to store temporary configuration data
 temp_config = {}
 
+# Variables to keep track of the number of commands executed and the time of the last restart
+commands_executed = 0
+last_restart = time.time()
+
 # Event listener for when the bot is ready
 @bot.event
 async def on_ready():
@@ -75,12 +80,15 @@ async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('------')
     bot.start_time = datetime.now()
-    print(f"We have logged in as {bot.user}")
     change_status.start()
+    print(f"Bot started at {bot.start_time}")
+    # Update the time of the last restart
+    global last_restart
+    last_restart = time.time()
     print('------')
     
 # Status'
-@tasks.loop(hours=1)  # Change status every hour
+@tasks.loop(hours=0.5)  # Change status every 30 mins
 async def change_status():
     await bot.wait_until_ready()
     # Get the number of servers the bot is in
@@ -93,7 +101,8 @@ async def change_status():
         discord.Game("with code"),
         discord.Game("with the API"),
         discord.Game("with the database"),
-        discord.Activity(type=discord.ActivityType.watching, name="kaydonbot.xyz")
+        discord.Activity(type=discord.ActivityType.watching, name="kaydonbot.xyz"),
+        discord.Activity(type=discord.ActivityType.watching, name=f"{commands_executed} commands executed")
     ]
     
     # Choose a random status and set it
@@ -193,7 +202,7 @@ log_file = "command_log.log"
 log_time_limit = timedelta(hours=6)
 
 @bot.event
-async def on_command(ctx):
+async def on_command_completion(ctx):
     now = datetime.now()
 
     # Open the log file in append mode
@@ -211,6 +220,10 @@ async def on_command(ctx):
     # Open the log file in write mode and overwrite it with the filtered lines
     with open(log_file, "w") as file:
         file.writelines(lines)
+
+    # Increment the number of commands executed
+    global commands_executed
+    commands_executed += 1
 
 
 # -------------------------------------------------INITIALIZATION ENDS--------------------------------------------------
@@ -1560,6 +1573,12 @@ async def bot_info(interaction: discord.Interaction):
 
     embed.add_field(name="Bot Version", value=latest_version, inline=False)
     embed.add_field(name="Servers", value=len(interaction.client.guilds), inline=False)
+    embed.add_field(name="Commands Executed", value=str(commands_executed), inline=False)
+    embed.add_field(name="Time Since Last Restart", value=f"<t:{int(last_restart)}:R>", inline=False)
+    embed.add_field(name="RAM Usage", value=f"{psutil.Process().memory_info().rss / 1024 ** 2:.2f} MB", inline=False)
+    embed.add_field(name="Developer", value="Kayden Cormier", inline=False)
+    embed.add_field(name="Documentation", value="[KaydonBot Documentation](https://kaydonbot.xyz)", inline=False)
+    embed.add_field(name="Bot Created", value="<t:1671139200:F>", inline=False)  # Timestamp for December 8th, 2023
 
     # Send the embed
     await interaction.response.send_message(embed=embed)
