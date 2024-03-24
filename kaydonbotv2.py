@@ -1560,7 +1560,7 @@ async def close_ticket(interaction: discord.Interaction, channel: discord.TextCh
 @bot.tree.command(name="botinfo", description="Gets the bot's current info")
 async def bot_info(interaction: discord.Interaction):
     # Create the embed
-    embed = discord.Embed(title="Bot Info")
+    embed = discord.Embed(title="Bot Info", color=discord.Color.gold())
 
     # Add fields to the embed
     embed.add_field(name="Bot Name", value=interaction.client.user.name, inline=False)
@@ -1573,7 +1573,7 @@ async def bot_info(interaction: discord.Interaction):
 
     embed.add_field(name="Bot Version", value=latest_version, inline=False)
     embed.add_field(name="Servers", value=len(interaction.client.guilds), inline=False)
-    embed.add_field(name="Commands Executed", value=str(commands_executed), inline=False)
+    # embed.add_field(name="Commands Executed", value=str(commands_executed), inline=False)
     embed.add_field(name="Time Since Last Restart", value=f"<t:{int(last_restart)}:R>", inline=False)
     embed.add_field(name="RAM Usage", value=f"{psutil.Process().memory_info().rss / 1024 ** 2:.2f} MB", inline=False)
     embed.add_field(name="Developer", value="Kayden Cormier", inline=False)
@@ -1800,36 +1800,40 @@ async def blackjack(interaction: discord.Interaction):
     # Check for Blackjack on initial deal
     if is_blackjack(player_hand) or is_blackjack(dealer_hand):
         await interaction.response.send_message("Checking for Blackjack...")
-        await update_game_message(message, player_hand, dealer_hand, game_over=True)
+        await update_game_message(interaction, player_hand, dealer_hand, game_over=True)
         return
 
-    message = await interaction.response.send_message("Starting Blackjack game...")
-    await update_game_message(message, player_hand, dealer_hand)
+    await interaction.response.send_message("Starting Blackjack game...")
+    await update_game_message(interaction, player_hand, dealer_hand)
 
     # Add reactions for player actions
-    await message.add_reaction('♠')  # Hit
-    await message.add_reaction('♦')  # Stand
+    await interaction.message.add_reaction('♠')  # Hit
+    await interaction.message.add_reaction('♦')  # Stand
+
+    game_over = False
 
     def check(reaction, user):
-        return user == interaction.user and str(reaction.emoji) in ['♠', '♦'] and reaction.message.id == message.id
+        return user == interaction.user and str(reaction.emoji) in ['♠', '♦'] and reaction.message.id == interaction.message.id and not game_over
 
-    try:
-        reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=check)
+    while not game_over:
+        try:
+            reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=check)
 
-        if str(reaction.emoji) == '♠':  # Hit
-            player_hand.append(draw_card())
-            if calculate_score(player_hand) > 21:
-                await update_game_message(message, player_hand, dealer_hand, game_over=True)
-            else:
-                await update_game_message(message, player_hand, dealer_hand)
-        elif str(reaction.emoji) == '♦':  # Stand
-            while calculate_score(dealer_hand) < 17:
-                dealer_hand.append(draw_card())
-            await update_game_message(message, player_hand, dealer_hand, game_over=True)
+            if str(reaction.emoji) == '♠':  # Hit
+                player_hand.append(draw_card())
+                if calculate_score(player_hand) > 21:
+                    game_over = True
+                await update_game_message(interaction, player_hand, dealer_hand, game_over)
+            elif str(reaction.emoji) == '♦':  # Stand
+                while calculate_score(dealer_hand) < 17:
+                    dealer_hand.append(draw_card())
+                game_over = True
+                await update_game_message(interaction, player_hand, dealer_hand, game_over)
 
-    except asyncio.TimeoutError:
-        await message.clear_reactions()
-        await message.edit(content="Blackjack game timed out.", embed=None)
+        except asyncio.TimeoutError:
+            await interaction.message.clear_reactions()
+            await interaction.edit_original_message(content="Blackjack game timed out.", embed=None)
+            break
 # _________________________________________________BLACKJACK ENDS_____________________________________________
 
 # _________________________________________________BATTLE GAME________________________________________________
@@ -1847,14 +1851,14 @@ async def battle(interaction: discord.Interaction):
     embed.add_field(name="Bot's Health", value=str(bot_health), inline=True)
     embed.add_field(name="Actions", value="⚔️ to attack\n🛡️ to defend", inline=False)
 
-    message = await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=False)
 
     # Add reactions for game actions
-    await message.add_reaction('⚔️')  # Attack
-    await message.add_reaction('🛡️')  # Defend
+    await interaction.message.add_reaction('⚔️')  # Attack
+    await interaction.message.add_reaction('🛡️')  # Defend
 
     # Store initial game state
-    game_states[message.id] = {
+    game_states[interaction.message.id] = {
         "player_health": player_health,
         "bot_health": bot_health,
         "interaction": interaction
@@ -1862,7 +1866,7 @@ async def battle(interaction: discord.Interaction):
 
 # Handle reactions
 @bot.event
-async def on_reaction_add_battle(reaction, user):
+async def on_reaction_add(reaction, user):
     if user != bot.user and reaction.message.id in game_states:
         game_state = game_states[reaction.message.id]
         interaction = game_state["interaction"]
@@ -1888,19 +1892,19 @@ async def on_reaction_add_battle(reaction, user):
         embed.add_field(name="Bot's Health", value=str(game_state["bot_health"]), inline=True)
         embed.add_field(name="Bot's Action", value="Bot chose to " + ("attack" if bot_action == '⚔️' else "defend"), inline=False)
 
-        await reaction.message.edit(embed=embed)
+        await interaction.edit_original_message(embed=embed)
 
         # Check for end of game
         if game_state["player_health"] <= 0 or game_state["bot_health"] <= 0:
             winner = "You win!" if game_state["player_health"] > game_state["bot_health"] else "Bot wins!"
-            await reaction.message.edit(content=winner, embed=None)
+            await interaction.edit_original_message(content=winner, embed=None)
             del game_states[reaction.message.id]  # Clean up the game state
             return
 
         # Prepare for the next turn
-        await reaction.message.clear_reactions()
-        await reaction.message.add_reaction('⚔️')  # Attack
-        await reaction.message.add_reaction('🛡️')  # Defend
+        await interaction.message.clear_reactions()
+        await interaction.message.add_reaction('⚔️')  # Attack
+        await interaction.message.add_reaction('🛡️')  # Defend
 # _________________________________________________BATTLE GAME ENDS________________________________________________
 
 
