@@ -102,7 +102,7 @@ async def change_status():
         discord.Game("with the API"),
         discord.Game("with the database"),
         discord.Activity(type=discord.ActivityType.watching, name="kaydonbot.xyz"),
-        discord.Activity(type=discord.ActivityType.watching, name=f"{commands_executed} commands executed")
+        # discord.Activity(type=discord.ActivityType.watching, name=f"{commands_executed} commands executed")
     ]
     
     # Choose a random status and set it
@@ -203,6 +203,8 @@ log_time_limit = timedelta(hours=6)
 
 @bot.event
 async def on_command_completion(ctx):
+    print("Command completed")
+
     now = datetime.now()
 
     # Open the log file in append mode
