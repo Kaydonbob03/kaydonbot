@@ -328,6 +328,7 @@ def get_dev_commands_embed():
     )
     embed.add_field(name="/sourcecode", value="returns the github repository", inline=False)
     embed.add_field(name="/invite", value="returns the invite link", inline=False)
+    embed.add_field(name="/support", value="returns the support server link", inline=False)
     embed.add_field(name="/ping", value="gets the bots current ping", inline=False)
     embed.add_field(name="/uptime", value="gets the bots current uptime", inline=False)
     embed.add_field(name="/leaveguild", value="Leaves the current server -authorized users only", inline=False)
@@ -1427,14 +1428,21 @@ async def birthdays_all(interaction: discord.Interaction):
 async def sourcecode(interaction: discord.Interaction):
     await interaction.response.defer()
     embed = discord.Embed(title="Source Code", description="Get the source code for this bot", 
-                  url="https://github.com/Kaydonbob03/kaydonbot", color=0x5CDBF0)
+                  url="https://github.com/Kaydonbob03/kaydonbot", color=discord.Color.gold())
     await interaction.followup.send(embed=embed)
 
 @bot.tree.command(name="invite", description="Get the invite link for this bot")
-async def sourcecode(interaction: discord.Interaction):
+async def invite(interaction: discord.Interaction):
     await interaction.response.defer()
     embed = discord.Embed(title="Invite Bot", description="Invite this bot to your server", 
                   url="https://discord.com/oauth2/authorize?client_id=1181143854959837184&permissions=8&scope=bot+applications.commands", color=discord.Color.gold())
+    await interaction.followup.send(embed=embed)
+
+@bot.tree.command(name="support", description="Get the support server link")
+async def support(interaction: discord.Interaction):
+    await interaction.response.defer()
+    embed = discord.Embed(title="Support Server", description="Join the support server for this bot", 
+                  url="https://kaydonbot.xyz/discord.html/", color=discord.Color.gold())
     await interaction.followup.send(embed=embed)
 
 
