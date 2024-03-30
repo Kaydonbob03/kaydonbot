@@ -247,7 +247,7 @@ async def commands(interaction: discord.Interaction):
     await message.add_reaction("➡️")  # Next page
     await message.add_reaction("⏩")  # Fast forward to last page
 
-def get_general_commands_embed():
+def get_general_commands_embed1():
     embed = discord.Embed(
         title="Kaydonbot General Commands",
         description="Commands available for all users. Default prefix is ';'",
@@ -265,13 +265,33 @@ def get_general_commands_embed():
     embed.add_field(name="/random [choices]", value="Make a random choice", inline=False)
     embed.add_field(name="/scream", value="Bot will scream randomly from a list screams", inline=False)
     embed.add_field(name="/screamedit [scream]", value="adds a scream to the list if its not already there", inline=False)
+    embed.set_footer(text="Page 1/7")
+    return embed
+
+def get_general_commands_embed2():
+    embed = discord.Embed(
+        title="Kaydonbot General Commands (cont.)",
+        description="Commands available for all users. Default prefix is ';'",
+        color=discord.Color.gold()
+    )
     embed.add_field(name="/userinfo [user]", value="Get information about a user", inline=False)
     embed.add_field(name="/serverinfo", value="Get information about the server", inline=False)
     embed.add_field(name="/birthday [date]", value="Set your birthday", inline=False)
     embed.add_field(name="/upcomingbirthdays", value="Get list of upcoming birthdays within 180 days", inline=False)
     embed.add_field(name="/deletebirthday", value="Delete your birthday", inline=False)
     embed.add_field(name="/birthdaylist", value="Get list of all birthdays", inline=False)
-    embed.set_footer(text="Page 1/6")
+    embed.add_field(name="/listdev", value="List all developer commands", inline=False)
+    embed.add_field(name="/listfn", value="List all Fortnite commands", inline=False)
+    embed.add_field(name="/listmod", value="List all moderator commands", inline=False)
+    embed.add_field(name="/listbotgames", value="List all bot games commands", inline=False)
+    embed.add_field(name="/listsuggestions", value="List all suggestions commands", inline=False)
+    embed.add_field(name="/listgeneral", value="List all general commands", inline=False)
+    embed.add_field(name="/listgeneral2", value="List all general commands", inline=False)
+    embed.add_field(name="/reminder [timestamp] [reminder]", value="Set a reminder", inline=False)
+    embed.add_field(name="/reminderbackup [date] [time] [timezone] [reminder]", value="Set a reminder (if other doesnt work)", inline=False)
+    embed.add_field(name="/reminders", value="List all reminders", inline=False)
+    embed.add_field(name="/timestamp [date] [time] [timezone]", value="Convert a date and time to a timestamp", inline=False)
+    embed.set_footer(text="Page 2/7")
     return embed
 
 def get_mod_commands_embed():
@@ -293,7 +313,7 @@ def get_mod_commands_embed():
     embed.add_field(name="/addrole [member] [role]", value="Add a role to a member", inline=False)
     embed.add_field(name="/removerole [member] [role]", value="Remove a role from a member", inline=False)
     embed.add_field(name="/hardban", value="initiates a setup to add a userid to autoban a user on join to the server", inline=False)
-    embed.set_footer(text="Page 3/6")
+    embed.set_footer(text="Page 4/7")
     return embed
 
 def get_bot_games_commands_embed():
@@ -307,7 +327,7 @@ def get_bot_games_commands_embed():
     embed.add_field(name="/wouldyourather", value="Play a round of Would You Rather", inline=False)
     embed.add_field(name="/truthordare", value="Play a fun little Truth or Dare game", inline=False)
     # Add more bot game commands here
-    embed.set_footer(text="Page 2/6")
+    embed.set_footer(text="Page 3/7")
     return embed
 
 def get_suggestions_commands_embed():
@@ -319,7 +339,7 @@ def get_suggestions_commands_embed():
     embed.add_field(name="/cmdsuggestion [Suggestion]", value="Suggest a new command.", inline=False)
     embed.add_field(name="/tdsuggestion [option] {truth/dare} [suggestion]", value="Suggest a SFW Truth or Dare.", inline=False)
     embed.add_field(name="/wyrsuggestion [suggestion]", value="Suggest a 'Would You Rather' question.", inline=False)
-    embed.set_footer(text="Page 6/6")
+    embed.set_footer(text="Page 7/7")
     return embed
 
 def get_dev_commands_embed():
@@ -340,7 +360,7 @@ def get_dev_commands_embed():
     embed.add_field(name="/botinfo", value="Gets the bots current info", inline=False)
     embed.add_field(name="/openticket", value="Opens a ticket for support", inline=False)
     embed.add_field(name="/closeticket", value="Closes a ticket (Only Admins/Mods can close tickets)", inline=False)
-    embed.set_footer(text="Page 5/6")
+    embed.set_footer(text="Page 6/7")
     return embed
 
 def get_fn_commands_embed():
@@ -352,14 +372,15 @@ def get_fn_commands_embed():
     embed.add_field(name="/fnshopcurrent", value="Returns the current item shop", inline=False)
     embed.add_field(name="/fnshopseen [itemname]", value="Retutns information on the item, specifically its last seen info", inline=False)
     embed.add_field(name="/fnshopupcoming", value="Retuns the upcoming item shop", inline=False)
-    embed.set_footer(text="Page 4/6")
+    embed.set_footer(text="Page 5/7")
     return embed
 
 @bot.event
 async def on_reaction_add(reaction, user):
     if user != bot.user and reaction.message.author == bot.user:
         embeds = [
-            get_general_commands_embed(), 
+            get_general_commands_embed1(), 
+            get_general_commands_embed2(),
             get_bot_games_commands_embed(), 
             get_mod_commands_embed(),
             get_fn_commands_embed(),
@@ -404,7 +425,13 @@ async def listsuggestions(interaction: discord.Interaction):
 
 @bot.tree.command(name="listgeneral", description="List all general commands")
 async def listgeneral(interaction: discord.Interaction):
-    await interaction.response.send_message(embed=get_general_commands_embed())
+    await interaction.response.send_message(embed=get_general_commands_embed1())
+
+@bot.tree.command(name="listgeneral2", description="List all general commands")
+async def listgeneral2(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=get_general_commands_embed2())
+
+
 
 
 
