@@ -1166,18 +1166,21 @@ conn.commit()
 conn.close()
 
 @bot.tree.command(name="reminder", description="Set a reminder")
-async def reminder(interaction: discord.Interaction, time: str, timezone: str, *, reminder: str):
+async def reminder(interaction: discord.Interaction, date: str, time: str, timezone: str, *, reminder: str):
     try:
-        await interaction.response.defer()
+        # Combine the date and time strings into one
+        datetime_str = f"{date} {time} {timezone}"
 
-        # Parse the time string into a datetime object
-        reminder_time = dateparser.parse(f"{time} {timezone}")
+        # Parse the datetime string into a datetime object
+        reminder_time = dateparser.parse(datetime_str)
         if not reminder_time:
-            await interaction.followup.send("Invalid time format.")
+            await interaction.response.send("Invalid date or time format.", ephemeral=True)
             return
 
         # Convert the reminder time to UTC
         reminder_time = reminder_time.astimezone(pytz.UTC)
+
+        await interaction.response.defer()
 
         # Store the reminder in the database
         conn = sqlite3.connect('reminders.db')
