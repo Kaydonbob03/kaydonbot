@@ -12,6 +12,7 @@ import sqlite3
 import sys
 import subprocess
 import psutil
+import pytz
 from datetime import datetime, timedelta
 from langdetect import detect, LangDetectException
 from discord.ext.commands import TextChannelConverter
@@ -378,6 +379,33 @@ async def on_reaction_add(reaction, user):
             await reaction.message.edit(embed=embeds[0])  # Go to first page
 
         await reaction.remove(user)
+
+
+@bot.tree.command(name="listdev", description="List all developer commands")
+async def listdev(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=get_dev_commands_embed())
+
+@bot.tree.command(name="listfn", description="List all Fortnite commands")
+async def listfn(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=get_fn_commands_embed())
+
+@bot.tree.command(name="listmod", description="List all moderator commands")
+async def listmod(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=get_mod_commands_embed())
+
+@bot.tree.command(name="listbotgames", description="List all bot games commands")
+async def listbotgames(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=get_bot_games_commands_embed())
+
+@bot.tree.command(name="listsuggestions", description="List all suggestions commands")
+async def listsuggestions(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=get_suggestions_commands_embed())
+
+@bot.tree.command(name="listgeneral", description="List all general commands")
+async def listgeneral(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=get_general_commands_embed())
+
+
 
 # --------------------------------------------------COMMANDS LIST ENDS-------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------------
@@ -1124,27 +1152,47 @@ async def weather(interaction: discord.Interaction, location: str):
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve weather info: {e}")
     
+import sqlite3
+
+conn = sqlite3.connect('reminders.db')
+c = conn.cursor()
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS reminders
+    (user_id text, reminder text, reminder_time text)
+''')
+
+conn.commit()
+conn.close()
+
 @bot.tree.command(name="reminder", description="Set a reminder")
-async def reminder(interaction: discord.Interaction, time: str, reminder: str):
+async def reminder(interaction: discord.Interaction, time: str, timezone: str, *, reminder: str):
     try:
         await interaction.response.defer()
+
         # Parse the time string into a datetime object
-        reminder_time = dateparser.parse(time)
+        reminder_time = dateparser.parse(f"{time} {timezone}")
         if not reminder_time:
             await interaction.followup.send("Invalid time format.")
             return
 
-        # Calculate the delay in seconds
-        delay = (reminder_time - datetime.now()).total_seconds()
-        if delay < 0:
-            await interaction.followup.send("Time is in the past.")
-            return
+        # Convert the reminder time to UTC
+        reminder_time = reminder_time.astimezone(pytz.UTC)
 
-        # Wait for the specified time and send the reminder
-        await asyncio.sleep(delay)
-        await interaction.followup.send(f"Reminder: {reminder}")
+        # Store the reminder in the database
+        conn = sqlite3.connect('reminders.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO reminders VALUES (?, ?, ?)", (interaction.user.id, reminder, reminder_time.isoformat()))
+        conn.commit()
+        conn.close()
+
+        await interaction.followup.send(f"Reminder set for {reminder_time} UTC.")
     except Exception as e:
         await interaction.followup.send(f"Failed to set reminder: {e}")
+
+@tasks.loop(seconds=60)  # Check for reminders every minute
+async def check_reminders():
+    conn = sqlite3.connect('reminders.db')
 
 
 @bot.tree.command(name="quote", description="Get an inspirational quote")

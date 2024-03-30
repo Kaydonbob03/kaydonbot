@@ -9,3 +9,6 @@ hosting/suggestions/
 
 # Ignore the birthdays.db to protect privacy
 birthdays.db
+
+# Ignore the reminders.db to protect privacy
+reminders.db
