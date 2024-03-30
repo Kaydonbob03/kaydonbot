@@ -1135,7 +1135,7 @@ async def reminder(interaction: discord.Interaction, time: str, reminder: str):
             return
 
         # Calculate the delay in seconds
-        delay = (reminder_time - datetime.datetime.now()).total_seconds()
+        delay = (reminder_time - datetime.now()).total_seconds()
         if delay < 0:
             await interaction.followup.send("Time is in the past.")
             return
