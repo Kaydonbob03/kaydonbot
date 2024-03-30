@@ -1164,7 +1164,7 @@ c.execute('''
 conn.commit()
 conn.close()
 
-@bot.tree.command(name="reminder", description="Set a reminder")
+@bot.tree.command(name="reminderbackup", description="Set a reminder example: YYYY-MM-DD HH:MM:SS UTC test reminder") 
 async def reminder(interaction: discord.Interaction, date: str, time: str, timezone: str, *, reminder: str):
     try:
         # Combine the date and time strings into one
@@ -1178,6 +1178,25 @@ async def reminder(interaction: discord.Interaction, date: str, time: str, timez
 
         # Convert the reminder time to UTC
         reminder_time = reminder_time.astimezone(pytz.UTC)
+
+        await interaction.response.defer()
+
+        # Store the reminder in the database
+        conn = sqlite3.connect('reminders.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO reminders VALUES (?, ?, ?)", (interaction.user.id, reminder, reminder_time.isoformat()))
+        conn.commit()
+        conn.close()
+
+        await interaction.followup.send(f"Reminder set for {reminder_time} UTC.")
+    except Exception as e:
+        await interaction.followup.send(f"Failed to set reminder: {e}")
+
+@bot.tree.command(name="reminder", description="Set a reminder. example: 1711827000 test reminder")
+async def reminder(interaction: discord.Interaction, timestamp: discord.Timestamp, *, reminder: str):
+    try:
+        # Convert the timestamp to a datetime object
+        reminder_time = timestamp.datetime
 
         await interaction.response.defer()
 
@@ -1489,6 +1508,32 @@ async def birthdays_all(interaction: discord.Interaction):
 
     except Exception as e:
         await interaction.response.send_message(f"Failed to retrieve birthdays: {e}")
+
+@bot.tree.command(name="timestamp", description="Convert a date and time to a Unix timestamp use format: YYYY-MM-DD HH:MM:SS UTC")
+async def unixtimestamp(interaction: discord.Interaction, date: str, time: str, timezone: str):
+    try:
+        # Combine the date and time strings into one
+        datetime_str = f"{date} {time} {timezone}"
+
+        # Parse the datetime string into a datetime object
+        dt = dateparser.parse(datetime_str)
+        if not dt:
+            await interaction.response.send("Invalid date or time format.", ephemeral=True)
+            return
+
+        # Convert the datetime object to the specified timezone
+        tz = pytz.timezone(timezone)
+        dt = tz.localize(dt)
+
+        # Convert the datetime object to a Unix timestamp
+        timestamp = int(dt.timestamp())
+
+        # Provide the format for embedding the timestamp in a Discord message
+        embed_format = f"<t:{timestamp}>"
+
+        await interaction.response.send(f"The Unix timestamp for {datetime_str} is {timestamp}. To embed it in a Discord message, use {embed_format}.")
+    except Exception as e:
+        await interaction.response.send(f"Failed to convert date and time to Unix timestamp: {e}")
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
