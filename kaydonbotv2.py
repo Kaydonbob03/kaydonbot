@@ -86,6 +86,7 @@ async def on_ready():
     # Update the time of the last restart
     global last_restart
     last_restart = time.time()
+    check_reminders.start()  # Start the background task to check reminders
     print('------')
     
 # Status'
@@ -1152,8 +1153,6 @@ async def weather(interaction: discord.Interaction, location: str):
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve weather info: {e}")
     
-import sqlite3
-
 conn = sqlite3.connect('reminders.db')
 c = conn.cursor()
 
@@ -1216,7 +1215,6 @@ async def check_reminders():
     conn.commit()
     conn.close()
 
-check_reminders.start()  # Start the background task
 
 
 @bot.tree.command(name="quote", description="Get an inspirational quote")
