@@ -1191,7 +1191,7 @@ c.execute('''
 conn.commit()
 conn.close()
 
-@bot.tree.command(name="reminderbackup", description="Set a reminder example: YYYY-MM-DD HH:MM:SS UTC test reminder") 
+@bot.tree.command(name="reminder", description="Set a reminder example: YYYY-MM-DD HH:MM:SS UTC test reminder") 
 async def reminder(interaction: discord.Interaction, date: str, time: str, timezone: str, *, reminder: str):
     try:
         # Combine the date and time strings into one
@@ -1200,7 +1200,7 @@ async def reminder(interaction: discord.Interaction, date: str, time: str, timez
         # Parse the datetime string into a datetime object
         reminder_time = dateparser.parse(datetime_str)
         if not reminder_time:
-            await interaction.response.send("Invalid date or time format.", ephemeral=True)
+            await interaction.response.send_message("Invalid date or time format.", ephemeral=True)
             return
 
         # Convert the reminder time to UTC
@@ -1208,25 +1208,11 @@ async def reminder(interaction: discord.Interaction, date: str, time: str, timez
 
         await interaction.response.defer()
 
-        # Store the reminder in the database
-        conn = sqlite3.connect('reminders.db')
-        c = conn.cursor()
-        c.execute("INSERT INTO reminders VALUES (?, ?, ?)", (interaction.user.id, reminder, reminder_time.isoformat()))
-        conn.commit()
-        conn.close()
-
-        await interaction.followup.send(f"Reminder set for {reminder_time} UTC.")
     except Exception as e:
-        await interaction.followup.send(f"Failed to set reminder: {e}")
+        await interaction.followup.send(f"Failed to parse date/time: {e}")
+        return
 
-@bot.tree.command(name="reminder", description="Set a reminder. example: 1711827000 test reminder")
-async def reminder(interaction: discord.Interaction, timestamp: discord.Timestamp, *, reminder: str):
     try:
-        # Convert the timestamp to a datetime object
-        reminder_time = timestamp.datetime
-
-        await interaction.response.defer()
-
         # Store the reminder in the database
         conn = sqlite3.connect('reminders.db')
         c = conn.cursor()
@@ -1237,6 +1223,25 @@ async def reminder(interaction: discord.Interaction, timestamp: discord.Timestam
         await interaction.followup.send(f"Reminder set for {reminder_time} UTC.")
     except Exception as e:
         await interaction.followup.send(f"Failed to set reminder: {e}")
+
+# @bot.tree.command(name="reminder", description="Set a reminder. example: 1711827000 test reminder")
+# async def reminder(interaction: discord.Interaction, timestamp: discord.Timestamp, *, reminder: str):
+#     try:
+#         # Convert the timestamp to a datetime object
+#         reminder_time = timestamp.datetime
+
+#         await interaction.response.defer()
+
+#         # Store the reminder in the database
+#         conn = sqlite3.connect('reminders.db')
+#         c = conn.cursor()
+#         c.execute("INSERT INTO reminders VALUES (?, ?, ?)", (interaction.user.id, reminder, reminder_time.isoformat()))
+#         conn.commit()
+#         conn.close()
+
+#         await interaction.followup.send(f"Reminder set for {reminder_time} UTC.")
+#     except Exception as e:
+#         await interaction.followup.send(f"Failed to set reminder: {e}")
 
 @tasks.loop(seconds=60)  # Check for reminders every minute
 async def check_reminders():
