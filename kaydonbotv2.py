@@ -1193,6 +1193,27 @@ async def reminder(interaction: discord.Interaction, time: str, timezone: str, *
 @tasks.loop(seconds=60)  # Check for reminders every minute
 async def check_reminders():
     conn = sqlite3.connect('reminders.db')
+    c = conn.cursor()
+
+    # Get the current time in UTC
+    now = datetime.now(pytz.UTC)
+
+    # Retrieve reminders that are due
+    c.execute("SELECT * FROM reminders WHERE reminder_time <= ?", (now.isoformat(),))
+    reminders = c.fetchall()
+
+    for reminder in reminders:
+        user_id, reminder_text, _ = reminder
+        user = bot.get_user(int(user_id))
+        if user:
+            await user.send(f"Reminder: {reminder_text}")
+
+    # Delete reminders that have been sent
+    c.execute("DELETE FROM reminders WHERE reminder_time <= ?", (now.isoformat(),))
+    conn.commit()
+    conn.close()
+
+check_reminders.start()  # Start the background task
 
 
 @bot.tree.command(name="quote", description="Get an inspirational quote")
