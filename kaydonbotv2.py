@@ -1550,12 +1550,8 @@ async def unixtimestamp(interaction: discord.Interaction, date: str, time: str, 
         # Parse the datetime string into a datetime object
         dt = dateparser.parse(datetime_str)
         if not dt:
-            await interaction.response.send("Invalid date or time format.", ephemeral=True)
+            await interaction.response.send_message("Invalid date or time format.", ephemeral=True)
             return
-
-        # Convert the datetime object to the specified timezone
-        tz = pytz.timezone(timezone)
-        dt = tz.localize(dt)
 
         # Convert the datetime object to a Unix timestamp
         timestamp = int(dt.timestamp())
@@ -1563,9 +1559,9 @@ async def unixtimestamp(interaction: discord.Interaction, date: str, time: str, 
         # Provide the format for embedding the timestamp in a Discord message
         embed_format = f"<t:{timestamp}>"
 
-        await interaction.response.send(f"The Unix timestamp for {datetime_str} is {timestamp}. To embed it in a Discord message, use {embed_format}.")
+        await interaction.response.send_message(f"The Unix timestamp for {datetime_str} is {timestamp}. To embed it in a Discord message, use {embed_format}.")
     except Exception as e:
-        await interaction.response.send(f"Failed to convert date and time to Unix timestamp: {e}")
+        await interaction.response.send_message(f"Failed to convert date and time to Unix timestamp: {e}")
 
 # ------------------------------------------------GENERAL COMMANDS ENDS----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
