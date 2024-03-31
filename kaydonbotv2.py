@@ -1224,25 +1224,6 @@ async def reminder(interaction: discord.Interaction, date: str, time: str, timez
     except Exception as e:
         await interaction.followup.send(f"Failed to set reminder: {e}")
 
-# @bot.tree.command(name="reminder", description="Set a reminder. example: 1711827000 test reminder")
-# async def reminder(interaction: discord.Interaction, timestamp: discord.Timestamp, *, reminder: str):
-#     try:
-#         # Convert the timestamp to a datetime object
-#         reminder_time = timestamp.datetime
-
-#         await interaction.response.defer()
-
-#         # Store the reminder in the database
-#         conn = sqlite3.connect('reminders.db')
-#         c = conn.cursor()
-#         c.execute("INSERT INTO reminders VALUES (?, ?, ?)", (interaction.user.id, reminder, reminder_time.isoformat()))
-#         conn.commit()
-#         conn.close()
-
-#         await interaction.followup.send(f"Reminder set for {reminder_time} UTC.")
-#     except Exception as e:
-#         await interaction.followup.send(f"Failed to set reminder: {e}")
-
 @tasks.loop(seconds=60)  # Check for reminders every minute
 async def check_reminders():
     conn = sqlite3.connect('reminders.db')
@@ -1259,6 +1240,7 @@ async def check_reminders():
         user_id, reminder_text, _ = reminder
         user = bot.get_user(int(user_id))
         if user:
+            # Send the reminder as a DM
             await user.send(f"Reminder: {reminder_text}")
 
     # Delete reminders that have been sent
@@ -1266,7 +1248,31 @@ async def check_reminders():
     conn.commit()
     conn.close()
 
+@bot.tree.command(name="reminders", description="Get a list of all set reminders")
+async def get_reminders(interaction: discord.Interaction):
+    try:
+        # Connect to the database
+        conn = sqlite3.connect('reminders.db')
+        c = conn.cursor()
 
+        # Retrieve all reminders
+        c.execute("SELECT * FROM reminders WHERE user_id = ?", (interaction.user.id,))
+        reminders = c.fetchall()
+
+        # Close the database connection
+        conn.close()
+
+        # Create an embed to display the reminders
+        embed = discord.Embed(title="Your Reminders", description="Here are all your set reminders:", color=0x3498db)
+
+        for reminder in reminders:
+            user_id, reminder_text, reminder_time = reminder
+            embed.add_field(name=reminder_time, value=reminder_text, inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+    except Exception as e:
+        await interaction.response.send_message(f"Failed to fetch reminders: {e}")
 
 @bot.tree.command(name="quote", description="Get an inspirational quote")
 async def quote(interaction: discord.Interaction):
