@@ -239,7 +239,7 @@ async def on_command_completion(ctx):
 @bot.tree.command(name="commands", description="Get a list off all commands")
 async def commands(interaction: discord.Interaction):
     await interaction.response.defer()
-    message = await interaction.followup.send(embed=get_general_commands_embed())
+    message = await interaction.followup.send(embed=get_general_commands_embed1())
 
     # Add reactions for navigation
     await message.add_reaction("⏪")  # Fast rewind to first page
@@ -254,6 +254,7 @@ def get_general_commands_embed1():
         color=discord.Color.gold()
     )
     embed.add_field(name="/commands", value="Displays list of all commands", inline=False)
+    embed.add_field(name="/help", value="Does the same as /commands", inline=False)
     embed.add_field(name="/hello", value="Bot will say hello", inline=False)
     embed.add_field(name="/chat [prompt]", value="Sends a prompt to the GPT API and returns a response", inline=False)
     embed.add_field(name="/image [prompt]", value="Uses DALL-E 3 to generate an image based on your prompt", inline=False)
@@ -431,7 +432,9 @@ async def listgeneral(interaction: discord.Interaction):
 async def listgeneral2(interaction: discord.Interaction):
     await interaction.response.send_message(embed=get_general_commands_embed2())
 
-
+@bot.tree.command(name="help", description="Get a list of all commands")
+async def help(interaction: discord.Interaction):
+    await commands(interaction)
 
 
 
