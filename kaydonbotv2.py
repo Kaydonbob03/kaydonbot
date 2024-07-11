@@ -233,20 +233,6 @@ async def on_command_completion(ctx):
 # -------------------------------------------------INITIALIZATION ENDS--------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 # --------------------------------------------------COMMANDS LIST-------------------------------------------------------
-
-
-# Define a slash command for 'commands'
-@bot.tree.command(name="commands", description="Get a list off all commands")
-async def commands(interaction: discord.Interaction):
-    await interaction.response.defer()
-    message = await interaction.followup.send(embed=get_general_commands_embed1())
-
-    # Add reactions for navigation
-    await message.add_reaction("⏪")  # Fast rewind to first page
-    await message.add_reaction("⬅️")  # Previous page
-    await message.add_reaction("➡️")  # Next page
-    await message.add_reaction("⏩")  # Fast forward to last page
-
 def get_general_commands_embed1():
     embed = discord.Embed(
         title="Kaydonbot General Commands",
@@ -376,6 +362,68 @@ def get_fn_commands_embed():
     embed.set_footer(text="Page 5/7")
     return embed
 
+
+# Define the embeds
+embeds = [
+    get_general_commands_embed1(), 
+    get_general_commands_embed2(),
+    get_bot_games_commands_embed(), 
+    get_mod_commands_embed(),
+    get_fn_commands_embed(),
+    get_dev_commands_embed(),
+    get_suggestions_commands_embed()
+]
+
+class MovePosts(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+            
+    @discord.ui.button(label="⏪", style=discord.ButtonStyle.blurple)
+    async def fastback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        try:
+            await interaction.message.edit(embed=embeds[0])
+        except Exception as e:
+            print(e)
+    
+    @discord.ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
+    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+        try:
+            current_page = int(interaction.message.embeds[0].footer.text.split('/')[0][-1]) - 1
+            next_page = (current_page - 1) % len(embeds)
+            await interaction.message.edit(embed=embeds[next_page])
+        except Exception as e:
+            print(e)
+    
+    @discord.ui.button(label="➡️", style=discord.ButtonStyle.blurple)
+    async def forward(self, interaction: discord.Interaction, button: discord.ui.Button):
+        try:
+            current_page = int(interaction.message.embeds[0].footer.text.split('/')[0][-1]) - 1
+            next_page = (current_page + 1) % len(embeds)
+            await interaction.message.edit(embed=embeds[next_page])
+        except Exception as e:
+            print(e)
+    
+    @discord.ui.button(label="⏩", style=discord.ButtonStyle.blurple)
+    async def fastforward(self, interaction: discord.Interaction, button: discord.ui.Button):
+        try:
+            await interaction.message.edit(embed=embeds[-1])
+        except Exception as e:
+            print(e)
+
+
+@bot.tree.command(name="commands", description="Get a list of all commands")
+async def commands(interaction: discord.Interaction):
+    await interaction.response.defer()
+    await interaction.followup.send(embed=get_general_commands_embed1(), view=MovePosts())
+
+
+    # Add reactions for navigation
+    # await message.add_reaction("⏪")  # Fast rewind to first page
+    # await message.add_reaction("⬅️")  # Previous page
+    # await message.add_reaction("➡️")  # Next page
+    # await message.add_reaction("⏩")  # Fast forward to last page
+
+
 @bot.event
 async def on_reaction_add(reaction, user):
     if user != bot.user and reaction.message.author == bot.user:
@@ -435,7 +483,6 @@ async def listgeneral2(interaction: discord.Interaction):
 @bot.tree.command(name="help", description="Get a list of all commands")
 async def help(interaction: discord.Interaction):
     await commands(interaction)
-
 
 
 # --------------------------------------------------COMMANDS LIST ENDS-------------------------------------------------------
