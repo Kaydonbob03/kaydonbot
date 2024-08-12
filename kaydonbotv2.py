@@ -1694,7 +1694,7 @@ async def shutdown(interaction: discord.Interaction):
         await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
 
 @bot.tree.command(name="leaveguild", description="Leave a guild")
-async def leave_guild(interaction: discord.Interaction, guild_id: float):
+async def leave_guild(interaction: discord.Interaction, guild_id: str):
     # Load the authorized user IDs from the JSON file
     with open("authorized_users.json", "r") as file:
         authorized_users = json.load(file)["users"]
