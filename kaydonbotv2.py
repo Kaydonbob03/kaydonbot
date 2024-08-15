@@ -1695,20 +1695,24 @@ async def shutdown(interaction: discord.Interaction):
 
 @bot.tree.command(name="leaveguild", description="Leave a guild")
 async def leave_guild(interaction: discord.Interaction, guild_id: str):
-    # Load the authorized user IDs from the JSON file
     with open("authorized_users.json", "r") as file:
         authorized_users = json.load(file)["users"]
 
-    # Check if the user who invoked the command is authorized
     if str(interaction.user.id) in authorized_users:
-        guild = bot.get_guild(guild_id)
-        if guild:
-            await guild.leave()
-            await interaction.response.send_message(f"Left guild: {guild_id}", ephemeral=True)
-        else:
-            await interaction.response.send_message("Guild not found.", ephemeral=True)
+        try:
+            guild_id_int = int(guild_id) 
+            guild = bot.get_guild(guild_id_int)
+            
+            if guild:
+                await guild.leave()
+                await interaction.response.send_message(f"Left guild: {guild_id}", ephemeral=True)
+            else:
+                await interaction.response.send_message("Guild not found.", ephemeral=True)
+        except ValueError:
+            await interaction.response.send_message("Invalid guild ID. Please provide a valid ID.", ephemeral=True)
     else:
         await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+
 
 @bot.tree.command(name="listguilds", description="List all guilds the bot is in")
 async def list_guilds(interaction: discord.Interaction):
