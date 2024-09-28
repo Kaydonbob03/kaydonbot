@@ -1078,7 +1078,7 @@ async def chat(interaction: discord.Interaction, prompt: str):
     async def fetch_response(model):
         try:
             start_time = time.time()
-            messages = [{"role": "system", "content": "You are a helpful assistant."},
+            messages = [{"role": "system", "content": "You are Kaydonbot, a discord bot that can chat with users. You strive to helpful and friendlyas well as humourous and entertaining."},
                         {"role": "user", "content": prompt}]
             response = await client.chat.completions.create(model=model, messages=messages)
             end_time = time.time()
@@ -1088,7 +1088,7 @@ async def chat(interaction: discord.Interaction, prompt: str):
             print(f"Error with model {model}: {e}")
             return None
 
-    models = ["gpt-4-1106-preview", "gpt-4", "gpt-3.5-turbo"]
+    models = ["gpt-4o", "gpt-3.5-turbo"]
     for model in models:
         response_task = asyncio.create_task(fetch_response(model))
         response = await response_task
@@ -1097,6 +1097,16 @@ async def chat(interaction: discord.Interaction, prompt: str):
             return
 
     await interaction.followup.send("Sorry, I'm unable to get a response at the moment.")
+
+@bot.tree.command(name="image", description="Generate an image using DALL-E 3")
+async def image(interaction: discord.Interaction, prompt: str):
+    await interaction.response.defer()
+
+    image_url = await generate_dalle_image(prompt)
+    if image_url:
+        await interaction.followup.send(image_url)
+    else:
+        await interaction.followup.send("Sorry, I couldn't generate an image.")
 
 async def generate_dalle_image(prompt: str):
     try:
@@ -1111,15 +1121,6 @@ async def generate_dalle_image(prompt: str):
         print(f"Error generating image: {e}")
         return None
 
-@bot.tree.command(name="image", description="Generate an image using DALL-E 3")
-async def image(interaction: discord.Interaction, prompt: str):
-    await interaction.response.defer()
-
-    image_url = await generate_dalle_image(prompt)
-    if image_url:
-        await interaction.followup.send(image_url)
-    else:
-        await interaction.followup.send("Sorry, I couldn't generate an image.")
 
 # ------------------------------------------------OPENAI COMMANDS ENDS-----------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
