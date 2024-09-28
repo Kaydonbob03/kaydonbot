@@ -12,3 +12,6 @@ birthdays.db
 
 # Ignore the reminders.db to protect privacy
 reminders.db
+
+# Ignore the server specific screams to protect server id's
+server_screams/
