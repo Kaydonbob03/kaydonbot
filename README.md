@@ -1,15 +1,15 @@
 # Kaydonbot Discord Bot
 
-KaydonBot is a Discord bot designed to enhance the functionality and interactivity of Discord servers. It integrates features like greeting new members, responding to user prompts using GPT-3.5-turbo, generating images with DALL-E 3, and a wide assortment of general commands, moderation commands, botgames, fortnite commands, and even dev commands. It also includes a rate limit system on moderator commands to prevent abuse. 
+KaydonBot is a Discord bot designed to enhance the functionality and interactivity of Discord servers. It integrates features like greeting new members, responding to user prompts using GPT-4o, generating images with DALL-E 3, and a wide assortment of general commands, moderation commands, botgames, fortnite commands, and even dev commands. It also includes a rate limit system on moderator commands to prevent abuse. 
 
 > Further info can be found on our website for the bot. Found [here](https://kaydonbot.xyz/)
 
 ## Features
 
 - **Welcome Messages**: Sends a custom welcome message to new members in a designated channel.
-- **GPT-4 Integration**: Interacts with users by responding to prompts using OpenAI's gpt-3.5-1106-turbo model.
+- **GPT-4o Integration**: Interacts with users by responding to prompts using OpenAI's gpt-4o model.
 - **DALL-E 3 Image Generation**: Generates images based on user prompts using OpenAI's DALL-E 3.
-- **Rate Limit System**: Prevents abuse of moderator commands by limiting their usage to once every 30 seconds per user per server.
+- **Rate Limit System**: Limits abuse of moderator commands by limiting their usage to once every 30 seconds per user per server.
 - **Birthday Releated**: The bot will @mention any user on their birthday in the designated #birthdays channel. Birthdays can be added to the bday database via commands through the bot
 
 ## Utilizing The Bot
@@ -78,8 +78,8 @@ This code is licensed under the GPL-3.0 License (GNU GENERAL PUBLIC LICENSE). Mo
 
 ## Contact
 
-For any queries or support, please send a message in the #support channel or open as ticket in our [support server](https://discord.gg/Ht4tugQPQM)
+For any queries or support, please send a message in the #support channel or open a ticket in our [support server](https://discord.gg/Ht4tugQPQM)
 
 ---
 
-> Note: This bot uses OpenAI's GPT-3.5-turbo models and DALL-E 3, which are subject to OpenAI's usage policies and limitations.
+> Note: This bot uses OpenAI's GPT-4o models and DALL-E 3, which are subject to OpenAI's usage policies and limitations.
