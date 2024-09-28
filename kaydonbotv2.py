@@ -236,7 +236,7 @@ async def on_command_completion(ctx):
 def get_general_commands_embed1():
     embed = discord.Embed(
         title="Kaydonbot General Commands",
-        description="Commands available for all users. Default prefix is ';'",
+        description="Commands available for all users. Default prefix is '!'",
         color=discord.Color.gold()
     )
     embed.add_field(name="/commands", value="Displays list of all commands", inline=False)
@@ -424,32 +424,32 @@ async def commands(interaction: discord.Interaction):
     # await message.add_reaction("⏩")  # Fast forward to last page
 
 
-@bot.event
-async def on_reaction_add(reaction, user):
-    if user != bot.user and reaction.message.author == bot.user:
-        embeds = [
-            get_general_commands_embed1(), 
-            get_general_commands_embed2(),
-            get_bot_games_commands_embed(), 
-            get_mod_commands_embed(),
-            get_fn_commands_embed(),
-            get_dev_commands_embed(),
-            get_suggestions_commands_embed()
-        ]
-        current_page = int(reaction.message.embeds[0].footer.text.split('/')[0][-1]) - 1
+# @bot.event
+# async def on_reaction_add(reaction, user):
+#     if user != bot.user and reaction.message.author == bot.user:
+#         embeds = [
+#             get_general_commands_embed1(), 
+#             get_general_commands_embed2(),
+#             get_bot_games_commands_embed(), 
+#             get_mod_commands_embed(),
+#             get_fn_commands_embed(),
+#             get_dev_commands_embed(),
+#             get_suggestions_commands_embed()
+#         ]
+#         current_page = int(reaction.message.embeds[0].footer.text.split('/')[0][-1]) - 1
 
-        if reaction.emoji == "➡️":
-            next_page = (current_page + 1) % len(embeds)
-            await reaction.message.edit(embed=embeds[next_page])
-        elif reaction.emoji == "⬅️":
-            next_page = (current_page - 1) % len(embeds)
-            await reaction.message.edit(embed=embeds[next_page])
-        elif reaction.emoji == "⏩":
-            await reaction.message.edit(embed=embeds[-1])  # Go to last page
-        elif reaction.emoji == "⏪":
-            await reaction.message.edit(embed=embeds[0])  # Go to first page
+#         if reaction.emoji == "➡️":
+#             next_page = (current_page + 1) % len(embeds)
+#             await reaction.message.edit(embed=embeds[next_page])
+#         elif reaction.emoji == "⬅️":
+#             next_page = (current_page - 1) % len(embeds)
+#             await reaction.message.edit(embed=embeds[next_page])
+#         elif reaction.emoji == "⏩":
+#             await reaction.message.edit(embed=embeds[-1])  # Go to last page
+#         elif reaction.emoji == "⏪":
+#             await reaction.message.edit(embed=embeds[0])  # Go to first page
 
-        await reaction.remove(user)
+#         await reaction.remove(user)
 
 
 @bot.tree.command(name="listdev", description="List all developer commands")
@@ -1354,32 +1354,65 @@ async def joke(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send(f"Failed to retrieve a joke: {e}")
 
-# Path to the JSON file for screams
-scream_json = 'random_scream.json'
+# Paths to the JSON files
+scream_json = 'random_scream.json'  # Global screams
+wordblacklist_json = 'complete_words_blacklist.json'  # Blacklist
+server_screams_dir = 'server_screams'  # Server-specific screams directory
 
-# Path to the JSON file for blacklist
-wordblacklist_json = 'complete_words_blacklist.json'
+# Ensure the 'server_screams' directory exists
+def ensure_server_screams_dir():
+    if not os.path.exists(server_screams_dir):
+        os.makedirs(server_screams_dir)
 
-# Function to read data from the JSON file
+# Function to read global screams
 def read_screams():
     with open(scream_json, 'r') as file:
         return json.load(file)['screams']
 
-# Function to read the blacklist from the JSON file
+# Function to read server-specific screams
+def read_server_screams(server_id):
+    ensure_server_screams_dir()
+    server_scream_json = os.path.join(server_screams_dir, f'server_{server_id}_screams.json')
+    if os.path.exists(server_scream_json):
+        with open(server_scream_json, 'r') as file:
+            return json.load(file).get('screams', [])
+    return []
+
+# Function to write server-specific screams
+def write_server_screams(server_id, screams):
+    ensure_server_screams_dir()
+    server_scream_json = os.path.join(server_screams_dir, f'server_{server_id}_screams.json')
+    with open(server_scream_json, 'w') as file:
+        json.dump({'screams': screams}, file, indent=4)
+
+# Function to read the blacklist
 def read_blacklist():
     with open(wordblacklist_json, 'r') as file:
         return json.load(file)['blacklist']
 
-# Function to write data to the JSON file
+# Function to write global screams
 def write_screams(screams):
     with open(scream_json, 'w') as file:
         json.dump({'screams': screams}, file, indent=4)
 
 @bot.tree.command(name="scream", description="Let out a random scream")
 async def scream(interaction: discord.Interaction):
-    screams = read_screams()
-    random_scream = random.choice(screams)
-    await interaction.response.send_message(f"# {random_scream}")
+    # Get global screams
+    global_screams = read_screams()
+
+    # Get server-specific screams
+    server_id = interaction.guild_id
+    server_screams = read_server_screams(server_id)
+
+    # Combine both global and server screams
+    all_screams = global_screams + server_screams
+
+    # Choose a random scream from the combined list
+    if all_screams:
+        random_scream = random.choice(all_screams)
+        await interaction.response.send_message(f"# {random_scream}")
+    else:
+        await interaction.response.send_message("No screams available yet for this server.")
 
 @bot.tree.command(name="screamedit", description="Adds a scream to the list if it's not already there")
 async def screamedit(interaction: discord.Interaction, scream: str):
@@ -1390,21 +1423,15 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     if re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', scream):
         await interaction.followup.send("Links are not allowed in screams. Please try again.", ephemeral=True)
         return
-    
+
     # Remove any '#' characters, trim whitespace, and convert to uppercase
     scream_sanitized = re.sub(r'#', '', scream).strip().upper()
 
-    # # Attempt to detect the language of the scream
-    # try:
-    #     if detect(scream_sanitized) != 'en':
-    #         await interaction.followup.send("Only English screams are allowed. Please try again.", ephemeral=True)
-    #         return
-    # except LangDetectException:
-    #     await interaction.followup.send("The language of your scream could not be determined. Please ensure it is English.", ephemeral=True)
-    #     return
-
     # Regular expression pattern for matching variations of the nword with whitespace in between letters
     nword_pattern = re.compile(r'n\s*i\s*g\s*g\s*e\s*r', re.IGNORECASE)
+    nword1_pattern = re.compile(r'n\s*i\s*g\s*g\s*a', re.IGNORECASE)
+    nword2_pattern = re.compile(r'n\s*i\s*g', re.IGNORECASE)
+    nword3_pattern = re.compile(r'n\s*i\s*g\s*g\s*e\s*r\s*s', re.IGNORECASE)
 
     # Remove all whitespace from the scream for the purpose of blacklist checking
     scream_for_blacklist_check = re.sub(r'\s+', '', scream_sanitized).lower()
@@ -1415,25 +1442,28 @@ async def screamedit(interaction: discord.Interaction, scream: str):
     # Read the blacklist
     blacklist = read_blacklist()
 
-    # Check if the scream for blacklist check contains any blacklisted substrings or the nword pattern
+    # Check if the scream contains blacklisted words or inappropriate content
     if any(blacklisted_word in scream_for_blacklist_check for blacklisted_word in blacklist) or nword_pattern.search(scream_for_blacklist_check):
         await interaction.followup.send("Your scream contains inappropriate content. Please try again without using offensive language.", ephemeral=True)
         return
 
-    # Read the current list of screams
-    screams = read_screams()
+    # Read global and server-specific screams
+    global_screams = read_screams()
+    server_id = interaction.guild_id
+    server_screams = read_server_screams(server_id)
 
-    # Check if the scream is already in the list
-    if scream_sanitized in screams: 
+    # Check if the scream is already in the list (global or server-specific)
+    if scream_sanitized in global_screams or scream_sanitized in server_screams:
         await interaction.followup.send("That scream is already in the list!", ephemeral=True)
         return
 
-    # Add the new scream to the list and write back to the JSON file
-    screams.append(scream_sanitized)
-    write_screams(screams)
+    # Add the scream to the server-specific list and write back to the JSON file
+    server_screams.append(scream_sanitized)
+    write_server_screams(server_id, server_screams)
 
     # Send the final response
-    await interaction.followup.send(f"New scream added to the list: {scream_sanitized}", ephemeral=True)
+    await interaction.followup.send(f"New scream added to the server's list: {scream_sanitized}", ephemeral=True)
+
 
 
 
