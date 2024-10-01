@@ -2590,6 +2590,213 @@ async def hangman(interaction: discord.Interaction):
     await message.edit(view=view)
 # _________________________________________________HANGMAN ENDS______________________________________________________
 
+# ___________________________________________________GUESS THE NUMBER______________________________________________
+# Define the range for the number to guess
+NUMBER_RANGE = (1, 100)
+
+# Function to create the initial game state
+def create_guess_the_number_state():
+    return {
+        "number": random.randint(*NUMBER_RANGE),
+        "attempts": 0,
+        "max_attempts": 10
+    }
+
+# Define a View for the Guess the Number game
+class GuessTheNumberView(discord.ui.View):
+    def __init__(self, message, state):
+        super().__init__(timeout=300)
+        self.message = message
+        self.state = state
+        self.guess = ""
+
+        for i in range(10):
+            self.add_item(GuessTheNumberButton(str(i)))
+
+        self.add_item(SubmitButton())
+
+    async def on_timeout(self):
+        await self.message.edit(content="Guess the Number game timed out.", embed=None, view=None)
+
+# Define a Button for each digit in the Guess the Number game
+class GuessTheNumberButton(discord.ui.Button):
+    def __init__(self, digit):
+        super().__init__(label=digit, style=discord.ButtonStyle.primary)
+        self.digit = digit
+
+    async def callback(self, interaction: discord.Interaction):
+        view = self.view
+        view.guess += self.digit
+        await interaction.response.defer()
+
+# Define a Submit Button for the Guess the Number game
+class SubmitButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label="Submit", style=discord.ButtonStyle.success)
+
+    async def callback(self, interaction: discord.Interaction):
+        view = self.view
+        state = view.state
+
+        if not view.guess:
+            await interaction.response.send_message("Please enter a number!", ephemeral=True)
+            return
+
+        guess = int(view.guess)
+        state["attempts"] += 1
+
+        if guess == state["number"]:
+            await view.message.edit(content=f"Congratulations! You guessed the number {state['number']} in {state['attempts']} attempts.", embed=None, view=None)
+            view.stop()
+            return
+
+        if state["attempts"] >= state["max_attempts"]:
+            await view.message.edit(content=f"You've run out of attempts! The number was {state['number']}.", embed=None, view=None)
+            view.stop()
+            return
+
+        hint = "higher" if guess < state["number"] else "lower"
+        embed = discord.Embed(title="Guess the Number", description=f"Your guess: {view.guess}\nHint: Try a {hint} number.", color=discord.Color.blue())
+        embed.set_footer(text=f"Attempts: {state['attempts']}/{state['max_attempts']}")
+        await view.message.edit(embed=embed)
+        view.guess = ""
+        await interaction.response.defer()
+
+# Guess the Number command
+@bot.tree.command(name="guess_the_number", description="Play a game of Guess the Number")
+async def guess_the_number(interaction: discord.Interaction):
+    state = create_guess_the_number_state()
+
+    embed = discord.Embed(title="Guess the Number", description=f"Guess a number between {NUMBER_RANGE[0]} and {NUMBER_RANGE[1]}.", color=discord.Color.blue())
+    embed.set_footer(text=f"Attempts: 0/{state['max_attempts']}")
+    await interaction.response.send_message(embed=embed)
+    message = await interaction.original_response()
+
+    view = GuessTheNumberView(message, state)
+    await message.edit(view=view)
+# ______________________________________________GUESS THE NUMBER ENDS______________________________________________
+
+# ______________________________________________________D&D________________________________________________________
+# Define the map dimensions
+MAP_ROWS = 8
+MAP_COLS = 5
+
+# Define the initial player state
+PLAYER = {
+    "position": (0, 0),
+    "health": 100
+}
+
+# Define the game objects
+ENEMIES = ["👹", "👺", "👻"]
+CHESTS = ["💰", "📦", "🪙"]
+
+# Function to create a random map with player, enemies, and chests
+def create_random_map():
+    map = [["🟦" for _ in range(MAP_COLS)] for _ in range(MAP_ROWS)]
+    empty_positions = [(r, c) for r in range(MAP_ROWS) for c in range(MAP_COLS)]
+
+    # Place player
+    player_pos = random.choice(empty_positions)
+    empty_positions.remove(player_pos)
+    PLAYER["position"] = player_pos
+
+    # Place enemies
+    num_enemies = random.randint(1, 5)
+    for _ in range(num_enemies):
+        enemy_pos = random.choice(empty_positions)
+        empty_positions.remove(enemy_pos)
+        map[enemy_pos[0]][enemy_pos[1]] = random.choice(ENEMIES)
+
+    # Place chests
+    num_chests = random.randint(1, 3)
+    for _ in range(num_chests):
+        chest_pos = random.choice(empty_positions)
+        empty_positions.remove(chest_pos)
+        map[chest_pos[0]][chest_pos[1]] = random.choice(CHESTS)
+
+    return map
+
+# Function to render the map with the player's position
+def render_map(map, player_position):
+    rendered_map = [row[:] for row in map]
+    x, y = player_position
+    rendered_map[x][y] = "🧙"
+    return "\n".join(["".join(row) for row in rendered_map])
+
+# Function to roll a dice
+def roll_dice(sides=20):
+    return random.randint(1, sides)
+
+# Define a View for the D&D game
+class DndView(discord.ui.View):
+    def __init__(self, message, player, game_map):
+        super().__init__(timeout=300)
+        self.message = message
+        self.player = player
+        self.game_map = game_map
+
+    @discord.ui.button(label="Move Up", style=discord.ButtonStyle.primary)
+    async def move_up(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_move(interaction, (-1, 0))
+
+    @discord.ui.button(label="Move Down", style=discord.ButtonStyle.primary)
+    async def move_down(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_move(interaction, (1, 0))
+
+    @discord.ui.button(label="Move Left", style=discord.ButtonStyle.primary)
+    async def move_left(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_move(interaction, (0, -1))
+
+    @discord.ui.button(label="Move Right", style=discord.ButtonStyle.primary)
+    async def move_right(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_move(interaction, (0, 1))
+
+    @discord.ui.button(label="Roll Dice", style=discord.ButtonStyle.secondary)
+    async def roll_dice(self, interaction: discord.Interaction, button: discord.ui.Button):
+        dice_result = roll_dice()
+        await interaction.response.send_message(f"You rolled a {dice_result}!", ephemeral=True)
+
+    async def handle_move(self, interaction: discord.Interaction, direction):
+        x, y = self.player["position"]
+        dx, dy = direction
+        new_x, new_y = x + dx, y + dy
+
+        if 0 <= new_x < len(self.game_map) and 0 <= new_y < len(self.game_map[0]):
+            self.player["position"] = (new_x, new_y)
+            cell_content = self.game_map[new_x][new_y]
+
+            if cell_content in ENEMIES:
+                self.player["health"] -= 10
+                await interaction.response.send_message("You encountered an enemy and lost 10 health!", ephemeral=True)
+            elif cell_content in CHESTS:
+                self.player["health"] += 10
+                await interaction.response.send_message("You found a chest and gained 10 health!", ephemeral=True)
+
+            self.game_map[new_x][new_y] = "🟦"  # Clear the cell after interaction
+            embed = discord.Embed(title="D&D Game", description=render_map(self.game_map, self.player["position"]), color=discord.Color.green())
+            embed.set_footer(text=f"Health: {self.player['health']}")
+            await self.message.edit(embed=embed)
+            await interaction.response.defer()
+        else:
+            await interaction.response.send_message("You can't move there!", ephemeral=True)
+
+    async def on_timeout(self):
+        await self.message.edit(content="D&D game timed out.", embed=None, view=None)
+
+# D&D command
+@bot.tree.command(name="dnd", description="Play a game of Dungeons & Dragons")
+async def dnd(interaction: discord.Interaction):
+    game_map = create_random_map()
+    embed = discord.Embed(title="D&D Game", description=render_map(game_map, PLAYER["position"]), color=discord.Color.green())
+    embed.set_footer(text=f"Health: {PLAYER['health']}")
+    await interaction.response.send_message(embed=embed)
+    message = await interaction.original_response()
+
+    view = DndView(message, PLAYER, game_map)
+    await message.edit(view=view)
+
+# ____________________________________________________D&D ENDS_____________________________________________________
 # --------------------------------------------------BOT GAMES END----------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------BOT TOKEN BELOW---------------------------------------------------------
