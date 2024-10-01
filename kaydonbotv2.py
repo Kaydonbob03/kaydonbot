@@ -2383,6 +2383,213 @@ async def connect4(interaction: discord.Interaction, opponent: discord.Member):
     view = Connect4View(message, interaction.user, opponent)
     await message.edit(view=view)
 # __________________________________________________CONNECT 4 ENDS__________________________________________________
+
+# ___________________________________________________TIC TAC TOE____________________________________________________
+
+# Define the Tic Tac Toe board dimensions
+TIC_TAC_TOE_SIZE = 3
+
+# Function to create an empty Tic Tac Toe board
+def create_tic_tac_toe_board():
+    return [[' ' for _ in range(TIC_TAC_TOE_SIZE)] for _ in range(TIC_TAC_TOE_SIZE)]
+
+# Function to check for a win
+def check_tic_tac_toe_win(board, player):
+    # Check rows and columns
+    for i in range(TIC_TAC_TOE_SIZE):
+        if all([cell == player for cell in board[i]]) or all([board[j][i] == player for j in range(TIC_TAC_TOE_SIZE)]):
+            return True
+
+    # Check diagonals
+    if all([board[i][i] == player for i in range(TIC_TAC_TOE_SIZE)]) or all([board[i][TIC_TAC_TOE_SIZE - 1 - i] == player for i in range(TIC_TAC_TOE_SIZE)]):
+        return True
+
+    return False
+
+# Function to render the Tic Tac Toe board as a string
+def render_tic_tac_toe_board(board):
+    return "\n".join([" | ".join(row) for row in board])
+
+# Define a View for the Tic Tac Toe game
+class TicTacToeView(discord.ui.View):
+    def __init__(self, message, player1, player2):
+        super().__init__(timeout=60)
+        self.message = message
+        self.board = create_tic_tac_toe_board()
+        self.current_player = player1
+        self.player1 = player1
+        self.player2 = player2
+        self.symbols = {player1: 'X', player2: 'O'}
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0, column=0)
+    async def button_0_0(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 0, 0, button)
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0, column=1)
+    async def button_0_1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 0, 1, button)
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0, column=2)
+    async def button_0_2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 0, 2, button)
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1, column=0)
+    async def button_1_0(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 1, 0, button)
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1, column=1)
+    async def button_1_1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 1, 1, button)
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1, column=2)
+    async def button_1_2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 1, 2, button)
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2, column=0)
+    async def button_2_0(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 2, 0, button)
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2, column=1)
+    async def button_2_1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 2, 1, button)
+
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2, column=2)
+    async def button_2_2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 2, 2, button)
+
+    async def handle_turn(self, interaction: discord.Interaction, row: int, col: int, button: discord.ui.Button):
+        if interaction.user != self.current_player:
+            await interaction.response.send_message("It's not your turn!", ephemeral=True)
+            return
+
+        if self.board[row][col] != ' ':
+            await interaction.response.send_message("This cell is already taken!", ephemeral=True)
+            return
+
+        self.board[row][col] = self.symbols[self.current_player]
+        button.label = self.symbols[self.current_player]
+        button.disabled = True
+        await interaction.response.edit_message(view=self)
+
+        if check_tic_tac_toe_win(self.board, self.symbols[self.current_player]):
+            await self.message.edit(content=f"{self.current_player.mention} wins!", embed=None, view=None)
+            self.stop()
+            return
+
+        if all(cell != ' ' for row in self.board for cell in row):
+            await self.message.edit(content="It's a tie!", embed=None, view=None)
+            self.stop()
+            return
+
+        self.current_player = self.player2 if self.current_player == self.player1 else self.player1
+        embed = discord.Embed(title="Tic Tac Toe", description=render_tic_tac_toe_board(self.board), color=discord.Color.green())
+        embed.set_footer(text=f"{self.current_player.display_name}'s turn ({self.symbols[self.current_player]})")
+        await self.message.edit(embed=embed)
+
+    async def on_timeout(self):
+        await self.message.edit(content="Tic Tac Toe game timed out.", embed=None, view=None)
+
+# Tic Tac Toe command
+@bot.tree.command(name="tictactoe", description="Play a game of Tic Tac Toe")
+async def tictactoe(interaction: discord.Interaction, opponent: discord.Member):
+    if opponent.bot:
+        await interaction.response.send_message("You can't play against a bot!", ephemeral=True)
+        return
+
+    embed = discord.Embed(title="Tic Tac Toe", description=render_tic_tac_toe_board(create_tic_tac_toe_board()), color=discord.Color.green())
+    embed.set_footer(text=f"{interaction.user.display_name}'s turn (X)")
+    await interaction.response.send_message(embed=embed)
+    message = await interaction.original_response()
+
+    view = TicTacToeView(message, interaction.user, opponent)
+    await message.edit(view=view)
+
+# ________________________________________________TIC TAC TOE ENDS___________________________________________________
+
+# ___________________________________________________HANGMAN_________________________________________________________
+# List of words for the Hangman game
+WORDS = ["python", "discord", "hangman", "bot", "programming", "game", "challenge", "community", "server", "library", "api"]
+
+# Function to create the initial game state
+def create_hangman_state(word):
+    return {
+        "word": word,
+        "guessed": ["_" for _ in word],
+        "incorrect_guesses": 0,
+        "guessed_letters": []
+    }
+
+# Function to render the Hangman game state as a string
+def render_hangman_state(state):
+    return " ".join(state["guessed"])
+
+# Define a View for the Hangman game
+class HangmanView(discord.ui.View):
+    def __init__(self, message, state):
+        super().__init__(timeout=300)
+        self.message = message
+        self.state = state
+        self.alphabet = "abcdefghijklmnopqrstuvwxyz"
+
+        for letter in self.alphabet:
+            self.add_item(HangmanButton(letter))
+
+    async def on_timeout(self):
+        await self.message.edit(content="Hangman game timed out.", embed=None, view=None)
+
+# Define a Button for each letter in the Hangman game
+class HangmanButton(discord.ui.Button):
+    def __init__(self, letter):
+        super().__init__(label=letter, style=discord.ButtonStyle.primary)
+        self.letter = letter
+
+    async def callback(self, interaction: discord.Interaction):
+        view = self.view
+        state = view.state
+
+        if self.letter in state["guessed_letters"]:
+            await interaction.response.send_message("You already guessed that letter!", ephemeral=True)
+            return
+
+        state["guessed_letters"].append(self.letter)
+
+        if self.letter in state["word"]:
+            for idx, char in enumerate(state["word"]):
+                if char == self.letter:
+                    state["guessed"][idx] = self.letter
+        else:
+            state["incorrect_guesses"] += 1
+
+        if "_" not in state["guessed"]:
+            await view.message.edit(content=f"You win! The word was: {state['word']}", embed=None, view=None)
+            view.stop()
+            return
+
+        if state["incorrect_guesses"] >= 6:
+            await view.message.edit(content=f"You lose! The word was: {state['word']}", embed=None, view=None)
+            view.stop()
+            return
+
+        embed = discord.Embed(title="Hangman", description=render_hangman_state(state), color=discord.Color.red())
+        embed.set_footer(text=f"Incorrect guesses: {state['incorrect_guesses']}/6")
+        await view.message.edit(embed=embed)
+        await interaction.response.defer()
+
+# Hangman command
+@bot.tree.command(name="hangman", description="Play a game of Hangman")
+async def hangman(interaction: discord.Interaction):
+    word = random.choice(WORDS)
+    state = create_hangman_state(word)
+
+    embed = discord.Embed(title="Hangman", description=render_hangman_state(state), color=discord.Color.red())
+    embed.set_footer(text="Incorrect guesses: 0/6")
+    await interaction.response.send_message(embed=embed)
+    message = await interaction.original_response()
+
+    view = HangmanView(message, state)
+    await message.edit(view=view)
+# _________________________________________________HANGMAN ENDS______________________________________________________
+
 # --------------------------------------------------BOT GAMES END----------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------BOT TOKEN BELOW---------------------------------------------------------
