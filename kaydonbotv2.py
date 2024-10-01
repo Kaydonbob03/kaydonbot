@@ -2035,6 +2035,36 @@ async def update_game_message(message, player_hand, dealer_hand, game_over=False
 
     await message.edit(embed=embed)
 
+# Define a View for the Blackjack game
+class BlackjackView(discord.ui.View):
+    def __init__(self, player_hand, dealer_hand, message):
+        super().__init__(timeout=60)
+        self.player_hand = player_hand
+        self.dealer_hand = dealer_hand
+        self.message = message
+        self.game_over = False
+
+    @discord.ui.button(label="Hit", style=discord.ButtonStyle.primary)
+    async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.player_hand.append(draw_card())
+        if calculate_score(self.player_hand) > 21:
+            self.game_over = True
+        await update_game_message(self.message, self.player_hand, self.dealer_hand, self.game_over)
+        if self.game_over:
+            self.stop()
+
+    @discord.ui.button(label="Stand", style=discord.ButtonStyle.secondary)
+    async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):
+        while calculate_score(self.dealer_hand) < 17:
+            self.dealer_hand.append(draw_card())
+        self.game_over = True
+        await update_game_message(self.message, self.player_hand, self.dealer_hand, self.game_over)
+        self.stop()
+
+    async def on_timeout(self):
+        await self.message.clear_reactions()
+        await self.message.edit(content="Blackjack game timed out.", embed=None)
+
 # Blackjack command
 @bot.tree.command(name="blackjack", description="Play a game of blackjack")
 async def blackjack(interaction: discord.Interaction):
@@ -2044,40 +2074,16 @@ async def blackjack(interaction: discord.Interaction):
     # Check for Blackjack on initial deal
     if is_blackjack(player_hand) or is_blackjack(dealer_hand):
         await interaction.response.send_message("Checking for Blackjack...")
-        await update_game_message(interaction, player_hand, dealer_hand, game_over=True)
+        message = await interaction.original_response()
+        await update_game_message(message, player_hand, dealer_hand, game_over=True)
         return
 
     await interaction.response.send_message("Starting Blackjack game...")
-    await update_game_message(interaction, player_hand, dealer_hand)
+    message = await interaction.original_response()
+    await update_game_message(message, player_hand, dealer_hand)
 
-    # Add reactions for player actions
-    await interaction.message.add_reaction('♠')  # Hit
-    await interaction.message.add_reaction('♦')  # Stand
-
-    game_over = False
-
-    def check(reaction, user):
-        return user == interaction.user and str(reaction.emoji) in ['♠', '♦'] and reaction.message.id == interaction.message.id and not game_over
-
-    while not game_over:
-        try:
-            reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=check)
-
-            if str(reaction.emoji) == '♠':  # Hit
-                player_hand.append(draw_card())
-                if calculate_score(player_hand) > 21:
-                    game_over = True
-                await update_game_message(interaction, player_hand, dealer_hand, game_over)
-            elif str(reaction.emoji) == '♦':  # Stand
-                while calculate_score(dealer_hand) < 17:
-                    dealer_hand.append(draw_card())
-                game_over = True
-                await update_game_message(interaction, player_hand, dealer_hand, game_over)
-
-        except asyncio.TimeoutError:
-            await interaction.message.clear_reactions()
-            await interaction.edit_original_message(content="Blackjack game timed out.", embed=None)
-            break
+    view = BlackjackView(player_hand, dealer_hand, message)
+    await message.edit(view=view)
 # _________________________________________________BLACKJACK ENDS_____________________________________________
 
 # _________________________________________________BATTLE GAME________________________________________________
@@ -2093,32 +2099,38 @@ async def battle(interaction: discord.Interaction):
     embed = discord.Embed(title="Battle Game", description="Choose your action!", color=discord.Color.red())
     embed.add_field(name="Your Health", value=str(player_health), inline=True)
     embed.add_field(name="Bot's Health", value=str(bot_health), inline=True)
-    embed.add_field(name="Actions", value="⚔️ to attack\n🛡️ to defend", inline=False)
+    embed.add_field(name="Actions", value="Use the buttons below to attack or defend.", inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=False)
-
-    # Add reactions for game actions
-    await interaction.message.add_reaction('⚔️')  # Attack
-    await interaction.message.add_reaction('🛡️')  # Defend
+    message = await interaction.original_response()
 
     # Store initial game state
-    game_states[interaction.message.id] = {
+    game_states[message.id] = {
         "player_health": player_health,
         "bot_health": bot_health,
-        "interaction": interaction
+        "interaction": interaction,
+        "message": message
     }
 
-# Handle reactions
-@bot.event
-async def on_reaction_add(reaction, user):
-    if user != bot.user and reaction.message.id in game_states:
-        game_state = game_states[reaction.message.id]
-        interaction = game_state["interaction"]
+    view = BattleView(message.id)
+    await message.edit(view=view)
 
-        if user.id != interaction.user.id:
-            return  # Ignore reactions from other users
+# Define a View for the Battle game
+class BattleView(discord.ui.View):
+    def __init__(self, message_id):
+        super().__init__(timeout=60)
+        self.message_id = message_id
 
-        player_action = reaction.emoji
+    @discord.ui.button(label="Attack", style=discord.ButtonStyle.primary)
+    async def attack(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_action(interaction, '⚔️')
+
+    @discord.ui.button(label="Defend", style=discord.ButtonStyle.secondary)
+    async def defend(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_action(interaction, '🛡️')
+
+    async def handle_action(self, interaction: discord.Interaction, player_action):
+        game_state = game_states[self.message_id]
         bot_action = random.choice(['⚔️', '🛡️'])
 
         # Determine the outcome of the turn
@@ -2136,19 +2148,28 @@ async def on_reaction_add(reaction, user):
         embed.add_field(name="Bot's Health", value=str(game_state["bot_health"]), inline=True)
         embed.add_field(name="Bot's Action", value="Bot chose to " + ("attack" if bot_action == '⚔️' else "defend"), inline=False)
 
-        await interaction.edit_original_message(embed=embed)
+        await game_state["message"].edit(embed=embed)
 
         # Check for end of game
         if game_state["player_health"] <= 0 or game_state["bot_health"] <= 0:
             winner = "You win!" if game_state["player_health"] > game_state["bot_health"] else "Bot wins!"
-            await interaction.edit_original_message(content=winner, embed=None)
-            del game_states[reaction.message.id]  # Clean up the game state
+            await game_state["message"].edit(content=winner, embed=None, view=None)
+            del game_states[self.message_id]  # Clean up the game state
+            self.stop()
             return
 
-        # Prepare for the next turn
-        await interaction.message.clear_reactions()
-        await interaction.message.add_reaction('⚔️')  # Attack
-        await interaction.message.add_reaction('🛡️')  # Defend
+    async def on_timeout(self):
+        game_state = game_states.get(self.message_id)
+        if game_state:
+            await game_state["message"].edit(content="Battle game timed out.", embed=None, view=None)
+            del game_states[self.message_id]
+
+# Handle button interactions
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+    if interaction.type == discord.InteractionType.component:
+        await interaction.response.defer()
+        await interaction.view.handle_action(interaction, interaction.data['custom_id'])
 # _________________________________________________BATTLE GAME ENDS________________________________________________
 
 
