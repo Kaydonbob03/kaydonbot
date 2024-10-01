@@ -2256,6 +2256,133 @@ async def truth_or_dare(interaction: discord.Interaction):
         await message.edit(content="Truth or Dare game timed out.", embed=None)
 
 # ________________________________________________TRUTH OR DARE ENDS________________________________________________
+
+# _____________________________________________________CONNECT 4____________________________________________________
+
+# Define the Connect 4 board dimensions
+ROWS = 6
+COLUMNS = 7
+
+# Function to create an empty board
+def create_board():
+    return [['⚪' for _ in range(COLUMNS)] for _ in range(ROWS)]
+
+# Function to check for a win
+def check_win(board, player):
+    # Check horizontal locations for win
+    for c in range(COLUMNS - 3):
+        for r in range(ROWS):
+            if board[r][c] == player and board[r][c + 1] == player and board[r][c + 2] == player and board[r][c + 3] == player:
+                return True
+
+    # Check vertical locations for win
+    for c in range(COLUMNS):
+        for r in range(ROWS - 3):
+            if board[r][c] == player and board[r + 1][c] == player and board[r + 2][c] == player and board[r + 3][c] == player:
+                return True
+
+    # Check positively sloped diagonals
+    for c in range(COLUMNS - 3):
+        for r in range(ROWS - 3):
+            if board[r][c] == player and board[r + 1][c + 1] == player and board[r + 2][c + 2] == player and board[r + 3][c + 3] == player:
+                return True
+
+    # Check negatively sloped diagonals
+    for c in range(COLUMNS - 3):
+        for r in range(3, ROWS):
+            if board[r][c] == player and board[r - 1][c + 1] == player and board[r - 2][c + 2] == player and board[r - 3][c + 3] == player:
+                return True
+
+    return False
+
+# Function to drop a disc in the board
+def drop_disc(board, col, disc):
+    for row in reversed(board):
+        if row[col] == '⚪':
+            row[col] = disc
+            return True
+    return False
+
+# Function to render the board as a string
+def render_board(board):
+    return "\n".join(["".join(row) for row in board])
+
+# Define a View for the Connect 4 game
+class Connect4View(discord.ui.View):
+    def __init__(self, message, player1, player2):
+        super().__init__(timeout=60)
+        self.message = message
+        self.board = create_board()
+        self.current_player = player1
+        self.player1 = player1
+        self.player2 = player2
+        self.discs = {player1: '🔴', player2: '🟡'}
+
+    @discord.ui.button(label="1", style=discord.ButtonStyle.primary)
+    async def button_1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 0)
+
+    @discord.ui.button(label="2", style=discord.ButtonStyle.primary)
+    async def button_2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 1)
+
+    @discord.ui.button(label="3", style=discord.ButtonStyle.primary)
+    async def button_3(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 2)
+
+    @discord.ui.button(label="4", style=discord.ButtonStyle.primary)
+    async def button_4(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 3)
+
+    @discord.ui.button(label="5", style=discord.ButtonStyle.primary)
+    async def button_5(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 4)
+
+    @discord.ui.button(label="6", style=discord.ButtonStyle.primary)
+    async def button_6(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 5)
+
+    @discord.ui.button(label="7", style=discord.ButtonStyle.primary)
+    async def button_7(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_turn(interaction, 6)
+
+    async def handle_turn(self, interaction: discord.Interaction, col: int):
+        if interaction.user != self.current_player:
+            await interaction.response.send_message("It's not your turn!", ephemeral=True)
+            return
+
+        if not drop_disc(self.board, col, self.discs[self.current_player]):
+            await interaction.response.send_message("Column is full!", ephemeral=True)
+            return
+
+        if check_win(self.board, self.discs[self.current_player]):
+            await self.message.edit(content=f"{self.current_player.mention} wins!", embed=None, view=None)
+            self.stop()
+            return
+
+        self.current_player = self.player2 if self.current_player == self.player1 else self.player1
+        embed = discord.Embed(title="Connect 4", description=render_board(self.board), color=discord.Color.blue())
+        embed.set_footer(text=f"{self.current_player.display_name}'s turn ({self.discs[self.current_player]})")
+        await self.message.edit(embed=embed)
+
+    async def on_timeout(self):
+        await self.message.edit(content="Connect 4 game timed out.", embed=None, view=None)
+
+# Connect 4 command
+@bot.tree.command(name="connect4", description="Play a game of Connect 4")
+async def connect4(interaction: discord.Interaction, opponent: discord.Member):
+    if opponent.bot:
+        await interaction.response.send_message("You can't play against a bot!", ephemeral=True)
+        return
+
+    embed = discord.Embed(title="Connect 4", description=render_board(create_board()), color=discord.Color.blue())
+    embed.set_footer(text=f"{interaction.user.display_name}'s turn (🔴)")
+    await interaction.response.send_message(embed=embed)
+    message = await interaction.original_response()
+
+    view = Connect4View(message, interaction.user, opponent)
+    await message.edit(view=view)
+# __________________________________________________CONNECT 4 ENDS__________________________________________________
 # --------------------------------------------------BOT GAMES END----------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------BOT TOKEN BELOW---------------------------------------------------------
