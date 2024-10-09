@@ -2421,39 +2421,39 @@ class TicTacToeView(discord.ui.View):
         self.player2 = player2
         self.symbols = {player1: 'X', player2: 'O'}
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0, column=0)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0)
     async def button_0_0(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 0, 0, button)
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0, column=1)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0)
     async def button_0_1(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 0, 1, button)
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0, column=2)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=0)
     async def button_0_2(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 0, 2, button)
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1, column=0)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1)
     async def button_1_0(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 1, 0, button)
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1, column=1)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1)
     async def button_1_1(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 1, 1, button)
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1, column=2)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=1)
     async def button_1_2(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 1, 2, button)
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2, column=0)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2)
     async def button_2_0(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 2, 0, button)
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2, column=1)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2)
     async def button_2_1(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 2, 1, button)
 
-    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2, column=2)
+    @discord.ui.button(label=" ", style=discord.ButtonStyle.secondary, row=2)
     async def button_2_2(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_turn(interaction, 2, 2, button)
 
