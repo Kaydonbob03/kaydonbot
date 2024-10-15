@@ -313,6 +313,10 @@ def get_bot_games_commands_embed():
     embed.add_field(name="/blackjack", value="Play a game of blackjack", inline=False)
     embed.add_field(name="/wouldyourather", value="Play a round of Would You Rather", inline=False)
     embed.add_field(name="/truthordare", value="Play a fun little Truth or Dare game", inline=False)
+    embed.add_field(name="/connect4", value="Play a game of connect 4", inline=False)
+    embed.add_field(name="/tictactoe", value="Play a game of Tic Tac Toe [Currently needs fixing]", inline=False)
+    embed.add_field(name="/hangman", value="Play a game of Hangman [Needs fixing]", inline=False)
+    embed.add_field(name="/dnd", value="Play a game of D&D", inline=False)
     # Add more bot game commands here
     embed.set_footer(text="Page 3/7")
     return embed
@@ -2663,7 +2667,7 @@ class SubmitButton(discord.ui.Button):
         await interaction.response.defer()
 
 # Guess the Number command
-@bot.tree.command(name="guess_the_number", description="Play a game of Guess the Number")
+@bot.tree.command(name="guessthenumber", description="Play a game of Guess the Number")
 async def guess_the_number(interaction: discord.Interaction):
     state = create_guess_the_number_state()
 
