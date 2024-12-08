@@ -14,7 +14,7 @@ import subprocess
 import psutil
 import pytz
 from datetime import datetime, timedelta
-from langdetect import detect, LangDetectException
+# from langdetect import detect, LangDetectException
 from discord.ext.commands import TextChannelConverter
 from discord.ext import commands, tasks
 from discord import app_commands
@@ -317,6 +317,7 @@ def get_bot_games_commands_embed():
     embed.add_field(name="/tictactoe", value="Play a game of Tic Tac Toe [Currently needs fixing]", inline=False)
     embed.add_field(name="/hangman", value="Play a game of Hangman [Needs fixing]", inline=False)
     embed.add_field(name="/dnd", value="Play a game of D&D", inline=False)
+    embed.add_field(name="/guess_the_number", value="Play a game of Guess the Number", inline=False)
     # Add more bot game commands here
     embed.set_footer(text="Page 3/7")
     return embed
@@ -366,7 +367,6 @@ def get_fn_commands_embed():
     embed.set_footer(text="Page 5/7")
     return embed
 
-
 # Define the embeds
 embeds = [
     get_general_commands_embed1(), 
@@ -413,7 +413,6 @@ class MovePosts(discord.ui.View):
             await interaction.message.edit(embed=embeds[-1])
         except Exception as e:
             print(e)
-
 
 @bot.tree.command(name="commands", description="Get a list of all commands")
 async def commands(interaction: discord.Interaction):
